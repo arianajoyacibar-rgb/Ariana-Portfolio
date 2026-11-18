@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillMatch — weighted résumé-to-job matcher</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#262b36;--ink:#eef0f4;--muted:#9aa3b2;--accent:#ff7a59;--ok:#3ecf8e;--warn:#f5b942}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);max-width:62ch;margin:8px 0 26px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+label{display:block;font-size:.8rem;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em}
+textarea,input,select{width:100%;background:#0f1218;border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:12px;font:inherit}
+textarea{min-height:170px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{background:var(--accent);color:#17120f;border:0;border-radius:999px;padding:11px 20px;font-weight:700;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.w{display:grid;grid-template-columns:110px 1fr 38px;gap:10px;align-items:center;margin:6px 0;font-size:.9rem}
+input[type=range]{padding:0;accent-color:var(--accent)}
+.score{display:flex;align-items:center;gap:20px}
+.ring{--p:0;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),#262b36 0);display:grid;place-items:center;flex:none}
+.ring b{width:92px;height:92px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:1.7rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{padding:3px 10px;border-radius:999px;font-size:.8rem;border:1px solid var(--line)}
+.chip.ok{color:var(--ok);border-color:#1f5d44;background:#12281f}
+.chip.miss{color:var(--warn);border-color:#6a5220;background:#2a2212}
+.bars{margin-top:16px;display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:100px 1fr 44px;gap:10px;font-size:.85rem;align-items:center}
+.bar i{display:block;height:9px;border-radius:9px;background:#262b36;overflow:hidden}
+.bar i u{display:block;height:100%;background:var(--accent);width:0;transition:width .6s ease}
+.job{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-top:8px;cursor:pointer}
+.job:hover,.job[aria-pressed=true]{border-color:var(--accent)}
+.job small{color:var(--muted)}
+.note{color:var(--muted);font-size:.8rem;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Skill<span>Match</span></h1>
+  <p class="sub">Paste a résumé and pick a job. SkillMatch parses skills, years of experience and education, then computes a weighted match score you can tune. Everything runs in your browser, so no data leaves your device.</p>
+  <div class="grid">
+    <section class="card" aria-label="Inputs">
+      <label for="resume">Résumé text</label>
+      <textarea id="resume" spellcheck="false"></textarea>
+      <div class="row"><button id="sample" class="ghost" type="button">Load sample résumé</button><button id="run" type="button">Match</button></div>
+      <label>Weights (auto-normalised)</label>
+      <div class="w"><span>Skills</span><input type="range" id="w1" min="0" max="10" value="6"><b id="o1">6</b></div>
+      <div class="w"><span>Experience</span><input type="range" id="w2" min="0" max="10" value="2"><b id="o2">2</b></div>
+      <div class="w"><span>Education</span><input type="range" id="w3" min="0" max="10" value="2"><b id="o3">2</b></div>
+      <label>Jobs</label>
+      <div id="jobs" role="group" aria-label="Open jobs"></div>
+    </section>
+    <section class="card" aria-live="polite" aria-label="Result">
+      <div class="score"><div class="ring" id="ring"><b id="pct">—</b></div><div><h2 id="jt" style="font-size:1.2rem">Pick a job</h2><p id="verdict" style="color:var(--muted)">Add a résumé and press Match.</p></div></div>
+      <div class="bars" id="bars"></div>
+      <label>Matched skills</label><div class="chips" id="ok"></div>
+      <label>Missing skills (what to learn next)</label><div class="chips" id="miss"></div>
+    </section>
+  </div>
+  <p class="note">Demo project. Skill extraction uses a keyword dictionary with aliases, not machine learning. Jobs and the sample résumé are fictional.</p>
+</div>
+<script>
+var SKILLS={
+ "javascript":["js","ecmascript"],"typescript":["ts"],"html":["html5"],"css":["css3"],"react":["reactjs","react.js"],"angular":[],"node.js":["node","nodejs"],
+ "express":["expressjs"],"python":[],"php":[],"laravel":[],"mysql":[],"postgresql":["postgres"],"mongodb":["mongo"],"rest api":["rest","restful"],
+ "git":["github"],"docker":[],"tailwind":["tailwindcss"],"figma":[],"jwt":[],"owasp":[],"java":[],"c#":["csharp"],"firebase":[],"capacitor":["ionic"],"sql":[]
+};
+var JOBS=[
+ {t:"Junior Web Developer (Intern)",req:["html","css","javascript","git"],nice:["react","node.js"],yrs:0,edu:2},
+ {t:"Full-Stack Developer (Junior)",req:["javascript","node.js","mysql","rest api","git"],nice:["react","docker","jwt"],yrs:1,edu:3},
+ {t:"Mobile App Developer (Trainee)",req:["javascript","typescript","capacitor"],nice:["angular","firebase"],yrs:0,edu:2},
+ {t:"Security-Minded Backend Dev",req:["node.js","sql","owasp","jwt"],nice:["docker","python"],yrs:1,edu:3}
+];
+var EDU={"phd":5,"master":5,"bachelor":3,"bsit":3,"bscs":3,"bs ":3,"college":2,"senior high":1,"diploma":2,"associate":2};
+var SAMPLE="Alex Reyes\nBSIT student, 3rd year\n\nSkills: HTML5, CSS3, JavaScript, React, Node.js, Express, MySQL, Git, REST API, JWT\nProjects: job placement platform (React, Node, MySQL), 1 year of side projects building web apps.\nInterned 6 months as a web developer.";
+var sel=0,$=function(i){return document.getElementById(i)};
+function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+function has(text,name){
+  var list=[name].concat(SKILLS[name]||[]);
+  return list.some(function(n){return new RegExp("(^|[^a-z0-9+#])"+esc(n)+"($|[^a-z0-9+#])","i").test(text)})
+}
+function parse(text){
+  var t=text.toLowerCase(),found=Object.keys(SKILLS).filter(function(s){return has(t,s)});
+  var yrs=0,m,re=/(\d+(?:\.\d+)?)\s*\+?\s*(year|yr|month)s?/g;
+  while((m=re.exec(t))){var v=parseFloat(m[1]);yrs+=m[2]==="month"?v/12:v}
+  var edu=0;Object.keys(EDU).forEach(function(k){if(t.indexOf(k)>-1)edu=Math.max(edu,EDU[k])});
+  return {skills:found,yrs:Math.min(yrs,10),edu:edu};
+}
+function score(p,job){
+  var req=job.req.filter(function(s){return p.skills.indexOf(s)>-1}),nice=job.nice.filter(function(s){return p.skills.indexOf(s)>-1});
+  var sk=(req.length+.5*nice.length)/(job.req.length+.5*job.nice.length);
+  var ex=job.yrs===0?1:Math.min(p.yrs/job.yrs,1);
+  var ed=Math.min(p.edu/job.edu,1);
+  var w=[+$("w1").value,+$("w2").value,+$("w3").value],tot=w[0]+w[1]+w[2]||1;
+  var total=(sk*w[0]+ex*w[1]+ed*w[2])/tot;
+  return {total:total,parts:[["Skills",sk],["Experience",ex],["Education",ed]],ok:req.concat(nice),miss:job.req.concat(job.nice).filter(function(s){return p.skills.indexOf(s)<0})};
+}
+function chips(el,arr,cls){el.innerHTML=arr.length?arr.map(function(s){return '<span class="chip '+cls+'">'+s+'</span>'}).join(""):'<span class="chip">none</span>'}
+function run(){
+  var text=$("resume").value.trim();
+  if(!text){$("verdict").textContent="Paste a résumé first.";return}
+  var p=parse(text),r=score(p,JOBS[sel]),pc=Math.round(r.total*100);
+  $("ring").style.setProperty("--p",pc);$("pct").textContent=pc+"%";$("jt").textContent=JOBS[sel].t;
+  $("verdict").textContent=(pc>=75?"Strong match.":pc>=50?"Promising. Close the gaps below.":"Stretch role. Build the missing skills first.")+" Found "+p.skills.length+" skills, ~"+p.yrs.toFixed(1)+" yrs experience.";
+  $("bars").innerHTML=r.parts.map(function(x){return '<div class="bar"><span>'+x[0]+'</span><i><u style="width:'+Math.round(x[1]*100)+'%"></u></i><b>'+Math.round(x[1]*100)+'%</b></div>'}).join("");
+  chips($("ok"),r.ok,"ok");chips($("miss"),r.miss,"miss");
+}
+function drawJobs(){
+  $("jobs").innerHTML="";
+  JOBS.forEach(function(j,i){
+    var d=document.createElement("div");d.className="job";d.tabIndex=0;d.setAttribute("role","button");d.setAttribute("aria-pressed",i===sel);
+    d.innerHTML="<span>"+j.t+"<br><small>needs: "+j.req.join(", ")+"</small></span>";
+    var pick=function(){sel=i;drawJobs();run()};
+    d.onclick=pick;d.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}};
+    $("jobs").appendChild(d);
+  });
+}
+["w1","w2","w3"].forEach(function(id,i){$(id).oninput=function(){$("o"+(i+1)).textContent=this.value;if($("resume").value.trim())run()}});
+$("sample").onclick=function(){$("resume").value=SAMPLE;run()};
+$("run").onclick=run;
+drawJobs();
+</script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StudyMate — ask questions, get answers from your own notes</title>
+<meta name="description" content="Upload your lecture notes and ask questions. StudyMate answers only from your notes, shows citations, and says so when the answer is not there.">
+<style>
+:root{--bg:#f6f3ff;--ink:#1d1740;--muted:#645d86;--line:#e1dcf5;--brand:#5b3fd1;--brand2:#43299f;--card:#fff;--hl:#ffe58a;--ok:#0f8a5f;--bad:#c2255c}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #f59e0b;outline-offset:2px;border-radius:8px}
+header{background:var(--brand);color:#fff;padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:1.15rem;margin-right:auto;display:flex;gap:10px;align-items:center}
+header h1 i{font-style:normal;background:#fff;color:var(--brand);width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:900}
+.tabs{display:flex;gap:4px}
+.tabs button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:9px;padding:7px 14px;font-weight:700;cursor:pointer}
+.tabs button[aria-pressed=true]{background:#fff;color:var(--brand)}
+main{display:grid;grid-template-columns:320px minmax(0,1fr);gap:16px;max-width:1200px;margin:0 auto;padding:16px}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{font-size:1rem;margin-bottom:10px}
+.notes{list-style:none;display:grid;gap:8px}
+.notes li{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;gap:8px;align-items:center}
+.notes li b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notes li small{color:var(--muted)}
+.notes button{border:0;background:#fee2e2;color:#991b1b;border-radius:7px;width:26px;height:26px;cursor:pointer}
+.btn{border:1.5px solid var(--brand);color:var(--brand);background:#fff;border-radius:10px;padding:7px 13px;font-weight:700;cursor:pointer}
+.btn:hover{background:#f1edff}
+.btn.fill{background:var(--brand);color:#fff}.btn.fill:hover{background:var(--brand2)}
+input[type=text],textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff}
+textarea{min-height:110px;resize:vertical}
+.chat{display:flex;flex-direction:column;min-height:560px}
+.log{flex:1;display:grid;gap:12px;align-content:start;padding-bottom:12px;max-height:60vh;overflow:auto}
+.msg{max-width:92%;padding:11px 14px;border-radius:14px}
+.msg.u{justify-self:end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+.msg.a{background:#f3f0ff;border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.a.none{background:#fff7ed;border-color:#fed7aa}
+.msg mark{background:var(--hl);border-radius:3px;padding:0 2px}
+.cites{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.cites button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:2px 10px;font-size:.8rem;cursor:pointer}
+.src{margin-top:8px;font-size:.86rem;color:var(--muted);border-left:3px solid var(--brand);padding-left:10px}
+.ask{display:flex;gap:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 11px;cursor:pointer;font-size:.83rem}
+.chips button:hover{background:#f1edff}
+.hint{color:var(--muted);font-size:.84rem}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+.pass{color:var(--ok);font-weight:800}.fail{color:var(--bad);font-weight:800}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.kpis div{background:#f3f0ff;border-radius:12px;padding:10px 12px}.kpis b{display:block;font-size:1.5rem}
+[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1><i>S</i> StudyMate</h1>
+  <div class="tabs" role="group" aria-label="View"><button type="button" data-v="chat" aria-pressed="true">Ask</button><button type="button" data-v="eval" aria-pressed="false">Test accuracy</button></div>
+</header>
+<main>
+  <aside>
+    <div class="card" style="margin-bottom:14px">
+      <h2>Your notes</h2>
+      <ul class="notes" id="notes"></ul>
+      <p class="hint" id="nstat" style="margin:8px 0"></p>
+      <label class="btn" for="file" style="display:inline-block">Upload .txt or .md</label><input id="file" type="file" accept=".txt,.md,text/plain" multiple hidden>
+      <button class="btn" id="sample" type="button">Reset to samples</button>
+    </div>
+    <div class="card">
+      <h2>Paste notes</h2>
+      <label for="ptitle" class="hint">Title</label><input type="text" id="ptitle" maxlength="50" placeholder="e.g. Week 4: Operating Systems">
+      <label for="pbody" class="hint" style="display:block;margin-top:8px">Text (separate paragraphs with a blank line)</label><textarea id="pbody"></textarea>
+      <button class="btn fill" id="padd" type="button" style="margin-top:8px">Add notes</button>
+    </div>
+  </aside>
+  <section>
+    <div class="card chat" id="vchat">
+      <h2>Ask about your notes</h2>
+      <div class="chips" id="sugg"></div>
+      <div class="log" id="log" aria-live="polite"><div class="msg a">Hi! Ask me a question. I only answer from the notes on the left, and I show where each answer came from.</div></div>
+      <form class="ask" id="form"><input type="text" id="q" placeholder="Type a question…" aria-label="Your question" autocomplete="off" required><button class="btn fill" type="submit">Ask</button></form>
+    </div>
+    <div class="card" id="veval" hidden>
+      <h2>Test accuracy</h2>
+      <p class="hint">Runs 8 questions against the sample notes. Six have an answer in the notes; two are out of scope, so the correct behavior is to say "not found" instead of guessing.</p>
+      <button class="btn fill" id="run" type="button" style="margin-top:10px">Run test</button>
+      <div class="kpis" id="kpis" hidden></div>
+      <table id="etab" hidden><thead><tr><th>Question</th><th>Expected</th><th>Got</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="hint" style="margin-top:10px">Method: notes are split into paragraphs; each paragraph and the question are turned into TF-IDF vectors; paragraphs are ranked by cosine similarity. If the best score is below the threshold, StudyMate declines to answer.</p>
+    </div>
+  </section>
+</main>
+<script>
+var $=function(i){return document.getElementById(i)},KEY='studymate-v1',THRESH=.1;
+var SAMPLE=[
+{id:1,title:'Networking basics',text:"The OSI model splits network communication into seven layers: physical, data link, network, transport, session, presentation, and application. Each layer only talks to the layer directly above and below it, which makes problems easier to isolate.\n\nTCP and UDP are the two main transport protocols. TCP is connection-oriented: it sets up a connection with a handshake, numbers every segment, and resends anything that is lost, so data arrives complete and in order. UDP is connectionless and does not check delivery, which makes it faster and suited to video calls, games, and DNS queries.\n\nDNS translates human-friendly domain names such as example.com into IP addresses. A resolver asks a chain of name servers until it finds the address, and caches the answer to speed up later requests.\n\nDHCP automatically gives devices an IP address, subnet mask, default gateway, and DNS server when they join a network, so nobody has to configure each device by hand.\n\nA subnet mask divides an IP address into a network part and a host part. For example, a /24 mask leaves 8 bits for hosts, which allows 254 usable addresses in that subnet."},
+{id:2,title:'Databases',text:"A primary key uniquely identifies each row in a table. It cannot be NULL and no two rows may share the same value.\n\nA foreign key is a column that refers to the primary key of another table. It links related records, such as an order to its customer, and the database uses it to keep the relationship valid so you cannot point to a customer that does not exist.\n\nNormalization organizes data to reduce duplication. First normal form (1NF) requires atomic values with no repeating groups. Second normal form (2NF) removes partial dependencies on part of a composite key. Third normal form (3NF) removes transitive dependencies, so non-key columns depend only on the key.\n\nAn SQL JOIN combines rows from two tables using a related column. An INNER JOIN returns only matching rows, while a LEFT JOIN keeps every row from the left table even when there is no match.\n\nAn index is a data structure that speeds up searches on a column, like the index of a book. The trade-off is extra storage and slower inserts, because the index must be updated.\n\nACID describes reliable transactions: atomicity, consistency, isolation, and durability. A transaction either fully completes or has no effect."},
+{id:3,title:'Web security',text:"SQL injection happens when user input is inserted directly into a query so an attacker can change its meaning. Prevent it with parameterized queries or prepared statements, and validate input on the server.\n\nCross-site scripting (XSS) lets an attacker run their own script in another user's browser. Prevent it by escaping output, using a Content Security Policy, and never inserting untrusted text as HTML.\n\nCross-site request forgery (CSRF) tricks a logged-in user's browser into sending an unwanted request. Anti-CSRF tokens and SameSite cookies protect against it.\n\nPasswords should never be stored in plain text. Hash them with a slow, salted algorithm such as bcrypt or Argon2 so that a leaked database does not reveal the original passwords, and so identical passwords produce different hashes.\n\nHTTPS uses TLS to encrypt traffic between the browser and the server and to verify the server's identity with a certificate, which stops attackers on the same network from reading or changing the data."}];
+var N;try{N=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}N=N||JSON.parse(JSON.stringify(SAMPLE));
+function save(){try{localStorage.setItem(KEY,JSON.stringify(N))}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var STOP=/^(a|an|the|is|are|was|were|be|do|does|did|of|to|in|on|for|and|or|what|which|who|how|why|when|where|it|its|this|that|with|as|by|at|from|can|i|me|my|you|your|about|between|difference|explain|tell|mean|means|should|would|could|use|used|using|vs)$/;
+function tok(s){return s.toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(function(w){return w&&!STOP.test(w)}).map(function(w){return w.length>3?w.replace(/(ing|ed|s)$/,''):w})}
+var CH=[],IDF={};
+function index(){
+  CH=[];N.forEach(function(n){n.text.split(/\n\s*\n/).map(function(p){return p.trim()}).filter(Boolean).forEach(function(p,i){CH.push({nid:n.id,title:n.title,para:i+1,text:p,tf:tf(tok(p))})})});
+  var df={};CH.forEach(function(c){Object.keys(c.tf).forEach(function(w){df[w]=(df[w]||0)+1})});
+  IDF={};Object.keys(df).forEach(function(w){IDF[w]=Math.log(1+CH.length/df[w])});
+  CH.forEach(function(c){c.v=vec(c.tf)});
+  var words=CH.reduce(function(a,c){return a+c.text.split(/\s+/).length},0);
+  $('nstat').textContent=N.length+' notes · '+CH.length+' paragraphs · '+words+' words';
+}
+function tf(ts){var m={};ts.forEach(function(w){m[w]=(m[w]||0)+1});return m}
+function vec(m){var v={},n=0;Object.keys(m).forEach(function(w){var x=m[w]*(IDF[w]||Math.log(1+CH.length));v[w]=x;n+=x*x});v._n=Math.sqrt(n)||1;return v}
+function search(q){
+  var qt=tok(q),qv=vec(tf(qt));
+  var r=CH.map(function(c){var d=0;Object.keys(qv).forEach(function(w){if(w!=='_n'&&c.v[w])d+=qv[w]*c.v[w]});return{c:c,s:d/(qv._n*c.v._n)}}).sort(function(a,b){return b.s-a.s});
+  return{terms:qt,hits:r.slice(0,3)};
+}
+function answer(q){
+  var r=search(q);if(!r.terms.length||!r.hits.length||r.hits[0].s<THRESH)return{found:false,r:r};
+  var top=r.hits[0].c,sents=top.text.match(/[^.!?]+[.!?]+/g)||[top.text];
+  var sc=sents.map(function(s,i){var t=tok(s),h=0;r.terms.forEach(function(w){if(t.indexOf(w)>-1)h++});return{s:s.trim(),h:h,i:i}});
+  var best=sc.slice().sort(function(a,b){return b.h-a.h||a.i-b.i}).slice(0,2).sort(function(a,b){return a.i-b.i});
+  return{found:true,text:best.map(function(x){return x.s}).join(' '),hits:r.hits.filter(function(h){return h.s>=THRESH*.7}),terms:r.terms};
+}
+function mark(text,terms){return esc(text).replace(/[A-Za-z0-9]+/g,function(w){var t=tok(w)[0];return t&&terms.indexOf(t)>-1?'<mark>'+w+'</mark>':w})}
+function add(cls,html){var d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;$('log').appendChild(d);$('log').scrollTop=1e6;return d}
+function ask(q){
+  add('u',esc(q));var a=answer(q);
+  if(!a.found){add('a none','I could not find that in your notes, so I will not guess. Try different words, or upload notes that cover this topic.');return}
+  var h=add('a',mark(a.text,a.terms)+'<div class="cites">'+a.hits.map(function(x,i){return '<button type="button" data-i="'+i+'">['+(i+1)+'] '+esc(x.c.title)+', paragraph '+x.c.para+'</button>'}).join('')+'</div><div class="src" hidden></div>');
+  h.querySelectorAll('.cites button').forEach(function(b){b.onclick=function(){var s=h.querySelector('.src'),x=a.hits[+b.dataset.i];s.hidden=false;s.innerHTML='<b>'+esc(x.c.title)+', paragraph '+x.c.para+'</b> (match '+Math.round(x.s*100)+'%)<br>'+mark(x.c.text,a.terms)}});
+}
+$('form').onsubmit=function(e){e.preventDefault();var q=$('q').value.trim();if(!q)return;$('q').value='';ask(q)};
+function renderNotes(){
+  var ul=$('notes');ul.innerHTML='';
+  if(!N.length)ul.innerHTML='<li class="hint">No notes yet. Upload or paste some.</li>';
+  N.forEach(function(n,i){var li=document.createElement('li');li.innerHTML='<b>'+esc(n.title)+'</b><small>'+n.text.split(/\s+/).length+' words</small><button type="button" aria-label="Remove '+esc(n.title)+'" data-i="'+i+'">×</button>';ul.appendChild(li)});
+  index();
+}
+$('notes').onclick=function(e){var i=e.target.dataset.i;if(i==null)return;N.splice(+i,1);save();renderNotes()};
+$('sample').onclick=function(){N=JSON.parse(JSON.stringify(SAMPLE));save();renderNotes()};
+$('padd').onclick=function(){var t=$('ptitle').value.trim()||'Untitled notes',b=$('pbody').value.trim();if(!b)return;N.push({id:Date.now(),title:t,text:b});$('ptitle').value=$('pbody').value='';save();renderNotes()};
+$('file').onchange=function(e){[].slice.call(e.target.files).forEach(function(f){var r=new FileReader();r.onload=function(){N.push({id:Date.now()+Math.random(),title:f.name.replace(/\.(txt|md)$/i,''),text:String(r.result)});save();renderNotes()};r.readAsText(f)});e.target.value=''};
+var SUG=['What is the difference between TCP and UDP?','What is a foreign key?','How do I prevent SQL injection?','Why hash passwords?'];
+$('sugg').innerHTML=SUG.map(function(s){return '<button type="button">'+esc(s)+'</button>'}).join('');
+$('sugg').onclick=function(e){if(e.target.tagName==='BUTTON')ask(e.target.textContent)};
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});$('vchat').hidden=b.dataset.v!=='chat';$('veval').hidden=b.dataset.v!=='eval'}});
+var TESTS=[['What is the difference between TCP and UDP?','Networking basics'],['What does DNS do?','Networking basics'],['What is a foreign key?','Databases'],['What does 3NF require?','Databases'],['How do I prevent SQL injection?','Web security'],['Why hash passwords?','Web security'],['Who won the basketball finals last year?',null],['How does photosynthesis work?',null]];
+$('run').onclick=function(){
+  var saved=N,savedC=CH;N=JSON.parse(JSON.stringify(SAMPLE));index();
+  var rows=[],ok=0,hit=0,need=0,refuse=0,out=0;
+  TESTS.forEach(function(t){var a=answer(t[0]),got=a.found?a.hits[0].c.title:null,good=got===t[1];if(t[1]){need++;if(good){hit++}}else{out++;if(!a.found)refuse++}if(good)ok++;rows.push([t[0],t[1]||'Not found',got||'Not found',good])});
+  N=saved;renderNotes();
+  $('kpis').hidden=false;$('kpis').innerHTML='<div><b>'+ok+'/'+TESTS.length+'</b>correct overall</div><div><b>'+hit+'/'+need+'</b>right source found</div><div><b>'+refuse+'/'+out+'</b>correctly declined</div>';
+  $('etab').hidden=false;$('etab').querySelector('tbody').innerHTML=rows.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="'+(r[3]?'pass':'fail')+'">'+(r[3]?'Pass':'Miss')+'</td></tr>'}).join('');
+};
+renderNotes();
+</script>
+</body>
+</html>

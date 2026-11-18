@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TapIn — classroom attendance by ID tap or QR</title>
+<meta name="description" content="A classroom attendance dashboard. Tap an ID, scan a QR, or type a student number. Late and absent are marked automatically, and data stays on the device.">
+<style>
+:root{--bg:#eef6f4;--ink:#0d2a26;--muted:#4f6e69;--line:#d4e4e0;--brand:#0f766e;--dark:#0a3d38;--ok:#15803d;--late:#b45309;--abs:#be123c;--card:#fff}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #f59e0b;outline-offset:2px;border-radius:8px}
+header{background:var(--dark);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:1.15rem;margin-right:auto;display:flex;gap:10px;align-items:center}
+header h1 i{font-style:normal;background:#5eead4;color:var(--dark);width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:900}
+.btn{border:1.5px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:10px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:.86rem}
+.btn:hover{background:rgba(255,255,255,.12)}
+.btn.dk{border-color:var(--brand);color:var(--brand);background:#fff}.btn.dk:hover{background:#e6f6f3}
+.btn.fill{background:var(--brand);border-color:var(--brand);color:#fff}.btn.fill:hover{background:#0b5f58}
+main{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.setup{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:600px){.setup{grid-template-columns:1fr}}
+label{display:block;font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:3px}
+input,select{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stats div{border-radius:12px;padding:10px 12px;background:#f1f8f6}
+.stats b{display:block;font-size:1.7rem;line-height:1.1}
+.stats .p b{color:var(--ok)}.stats .l b{color:var(--late)}.stats .a b{color:var(--abs)}
+.scan{display:flex;gap:8px}
+.scan input{font-size:1.1rem;font-weight:700;letter-spacing:.04em}
+.flash{margin-top:10px;border-radius:12px;padding:12px 14px;font-weight:700;display:none}
+.flash.show{display:block}.flash.ok{background:#dcfce7;color:#14532d}.flash.late{background:#fef3c7;color:#78350f}.flash.err{background:#ffe4e6;color:#881337}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.stu{border:1.5px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff;text-align:left;cursor:pointer}
+.stu small{display:block;color:var(--muted)}
+.stu.present{border-color:#86efac;background:#f0fdf4}.stu.late{border-color:#fcd34d;background:#fffbeb}
+.stu .tag{font-weight:800;font-size:.8rem}
+.stu.present .tag{color:var(--ok)}.stu.late .tag{color:var(--late)}.stu:not(.present):not(.late) .tag{color:var(--abs)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+.pill{border-radius:999px;padding:1px 9px;font-size:.78rem;font-weight:800}
+.pill.present{background:#dcfce7;color:#14532d}.pill.late{background:#fef3c7;color:#78350f}.pill.absent{background:#ffe4e6;color:#881337}
+.hint{color:var(--muted);font-size:.84rem}
+.priv{list-style:none;display:grid;gap:7px;font-size:.9rem}.priv li{display:flex;gap:8px}.priv i{font-style:normal;color:var(--ok);font-weight:800}
+canvas{width:100%;height:150px;display:block}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1><i>T</i> TapIn</h1>
+  <button class="btn" id="csv" type="button">Export CSV</button>
+  <button class="btn" id="newS" type="button">Start new session</button>
+  <button class="btn" id="wipe" type="button">Delete all data</button>
+</header>
+<main>
+<div>
+  <section class="card" aria-label="Session">
+    <h2>Class session <span class="hint" id="clock"></span></h2>
+    <div class="setup">
+      <div><label for="subj">Subject</label><input id="subj" value="IT 311: Web Systems"></div>
+      <div><label for="start">Class starts</label><input id="start" type="time" value="08:00"></div>
+      <div><label for="grace">Late after (minutes)</label><input id="grace" type="number" min="0" max="60" value="10"></div>
+    </div>
+  </section>
+  <section class="card" aria-label="Scan">
+    <h2>Tap or scan</h2>
+    <div class="scan"><input id="sid" placeholder="Student number, then Enter" aria-label="Student number" autocomplete="off" inputmode="numeric"><button class="btn fill" id="tap" type="button">Tap</button></div>
+    <p class="hint" style="margin-top:6px">An RFID or QR reader types the number and presses Enter, so a real reader works with this box. For the demo, click a student below or type a number like <b>2023-0101</b>.</p>
+    <div class="setup" style="margin-top:10px"><div><label for="when">Tap time (demo, 08:05 is on time)</label><input id="when" type="time" value="08:05"></div><div style="grid-column:span 2;align-self:end"><button class="btn dk" id="now" type="button">Use current time</button></div></div>
+    <div class="flash" id="flash" role="status"></div>
+  </section>
+  <section class="card" aria-label="Roster">
+    <h2>Roster <span class="hint">Click a card to simulate a tap</span></h2>
+    <div class="roster" id="roster"></div>
+  </section>
+</div>
+<div>
+  <section class="card" aria-label="Summary">
+    <h2>Today</h2>
+    <div class="stats"><div><small>Enrolled</small><b id="sE">0</b></div><div class="p"><small>Present</small><b id="sP">0</b></div><div class="l"><small>Late</small><b id="sL">0</b></div><div class="a"><small>Absent</small><b id="sA">0</b></div></div>
+  </section>
+  <section class="card" aria-label="History">
+    <h2>Attendance rate by session</h2>
+    <canvas id="chart" role="img" aria-label="Attendance rate by session"></canvas>
+    <p class="hint" id="chartNote"></p>
+  </section>
+  <section class="card" aria-label="Log">
+    <h2>Tap log</h2>
+    <table><thead><tr><th>Time</th><th>Student</th><th>Status</th></tr></thead><tbody id="log"></tbody></table>
+  </section>
+  <section class="card" aria-label="Privacy">
+    <h2>Privacy by design</h2>
+    <ul class="priv">
+      <li><i>✓</i>Stores only a student number, name and tap time</li>
+      <li><i>✓</i>No photos or biometrics are collected</li>
+      <li><i>✓</i>Data stays on this device; nothing is uploaded</li>
+      <li><i>✓</i>One tap deletes everything</li>
+    </ul>
+  </section>
+</div>
+</main>
+<script>
+var $=function(i){return document.getElementById(i)},KEY='tapin-v1';
+var ROSTER=[['2023-0101','Maria Santos'],['2023-0102','Jose Dela Cruz'],['2023-0103','Angel Reyes'],['2023-0104','Paolo Garcia'],['2023-0105','Bea Mendoza'],['2023-0106','Carlo Ramos'],['2023-0107','Denise Flores'],['2023-0108','Ethan Aquino'],['2023-0109','Faith Bautista'],['2023-0110','Gabriel Cruz'],['2023-0111','Hannah Lim'],['2023-0112','Ivan Navarro']];
+function seedHistory(){var rates=[[12,0],[11,1],[10,1],[12,0],[9,2],[11,0]],h=[],d=new Date();d.setDate(d.getDate()-rates.length*2);
+  rates.forEach(function(r,i){var dd=new Date(d);dd.setDate(d.getDate()+i*2);h.push({date:dd.toISOString().slice(0,10),subject:'IT 311: Web Systems',present:r[0]-r[1],late:r[1],total:12})});return h}
+var S;try{S=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+S=S||{taps:{},history:seedHistory(),log:[]};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function mins(t){var a=t.split(':');return +a[0]*60+ +a[1]}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+setInterval(function(){$('clock').textContent=new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})},1000);
+function status(t){return mins(t)-mins($('start').value)>(+$('grace').value||0)?'late':'present'}
+function flash(c,m){var f=$('flash');f.className='flash show '+c;f.textContent=m;clearTimeout(flash.t);flash.t=setTimeout(function(){f.className='flash'},3500)}
+function tap(id){
+  id=id.trim();var st=ROSTER.filter(function(r){return r[0]===id})[0];
+  if(!st){flash('err','Student number '+id+' is not on this roster.');return}
+  if(S.taps[id]){flash('late',st[1]+' already tapped in at '+S.taps[id].time+'.');return}
+  var t=$('when').value||hhmm(new Date()),s=status(t);
+  S.taps[id]={time:t,status:s};S.log.unshift({id:id,name:st[1],time:t,status:s});save();render();
+  flash(s==='present'?'ok':'late',st[1]+(s==='present'?' is present. ':' is marked late. ')+t);
+}
+$('tap').onclick=function(){tap($('sid').value);$('sid').value='';$('sid').focus()};
+$('sid').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();$('tap').click()}};
+$('roster').onclick=function(e){var b=e.target.closest('button');if(b)tap(b.dataset.id)};
+$('now').onclick=function(){$('when').value=hhmm(new Date())};
+['start','grace'].forEach(function(i){$(i).onchange=function(){Object.keys(S.taps).forEach(function(k){S.taps[k].status=status(S.taps[k].time)});S.log.forEach(function(l){l.status=S.taps[l.id]?S.taps[l.id].status:l.status});save();render()}});
+function render(){
+  var p=0,l=0;
+  $('roster').innerHTML=ROSTER.map(function(r){var t=S.taps[r[0]],c=t?t.status:'';if(c==='present')p++;if(c==='late')l++;return '<button type="button" class="stu '+c+'" data-id="'+r[0]+'"><b>'+esc(r[1])+'</b><small>'+r[0]+'</small><span class="tag">'+(t?(c==='late'?'Late ':'Present ')+t.time:'Absent')+'</span></button>'}).join('');
+  $('sE').textContent=ROSTER.length;$('sP').textContent=p;$('sL').textContent=l;$('sA').textContent=ROSTER.length-p-l;
+  $('log').innerHTML=S.log.length?S.log.map(function(x){return '<tr><td>'+x.time+'</td><td>'+esc(x.name)+'</td><td><span class="pill '+x.status+'">'+x.status+'</span></td></tr>'}).join(''):'<tr><td colspan="3" class="hint">No taps yet this session.</td></tr>';
+  chart(p,l);
+}
+function chart(p,l){
+  var cv=$('chart'),r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=r.width*d;cv.height=r.height*d;var x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);
+  var data=S.history.map(function(h){return{l:h.date.slice(5),v:(h.present+h.late)/h.total}});
+  var cur=(p+l)/ROSTER.length;data.push({l:'Today',v:cur,cur:1});
+  var w=r.width,h=r.height,pad=22,bw=(w-20)/data.length;
+  x.strokeStyle='#d4e4e0';x.beginPath();x.moveTo(10,h-pad+.5);x.lineTo(w-10,h-pad+.5);x.stroke();
+  data.forEach(function(q,i){var bh=q.v*(h-pad-16),bx=10+i*bw+6;x.fillStyle=q.cur?'#0f766e':'#99d5cd';x.beginPath();x.roundRect?x.roundRect(bx,h-pad-bh,bw-12,bh,4):x.rect(bx,h-pad-bh,bw-12,bh);x.fill();x.fillStyle='#4f6e69';x.font='11px system-ui';x.textAlign='center';x.fillText(q.l,bx+(bw-12)/2,h-7);x.fillStyle='#0d2a26';x.fillText(Math.round(q.v*100)+'%',bx+(bw-12)/2,h-pad-bh-4)});
+  var avg=S.history.reduce(function(a,b){return a+(b.present+b.late)/b.total},0)/Math.max(1,S.history.length);
+  $('chartNote').textContent='Average over past sessions: '+Math.round(avg*100)+'% (sample history).';
+}
+$('newS').onclick=function(){var p=0,l=0;Object.keys(S.taps).forEach(function(k){S.taps[k].status==='late'?l++:p++});if(p+l)S.history.push({date:new Date().toISOString().slice(0,10),subject:$('subj').value,present:p,late:l,total:ROSTER.length});S.taps={};S.log=[];save();render();flash('ok','New session started. Last session saved to history.')};
+$('wipe').onclick=function(){if(!confirm('Delete all attendance data on this device?'))return;S={taps:{},history:[],log:[]};save();render()};
+$('csv').onclick=function(){var rows=[['student_number','name','status','time']].concat(ROSTER.map(function(r){var t=S.taps[r[0]];return[r[0],r[1],t?t.status:'absent',t?t.time:'']}));
+  var c=rows.map(function(r){return r.map(function(v){return /[",]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')}).join('\n');
+  try{var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download='attendance-'+new Date().toISOString().slice(0,10)+'.csv';a.click()}catch(e){flash('err','Download blocked here. Open in its own tab.')}};
+addEventListener('resize',function(){render()});
+render();
+</script>
+</body>
+</html>

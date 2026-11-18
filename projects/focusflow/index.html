@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FocusFlow — study planner with Pomodoro</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fff;--ink:#1a1b20;--muted:#6a6d78;--line:#e3e0d6;--a:#4f46e5;--ok:#1f9d6b;--warn:#d9822b}
+:root.dark{--bg:#111318;--card:#1a1d25;--ink:#eef0f4;--muted:#9aa1b0;--line:#2a2f3a;--a:#8b86ff}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;transition:background .3s}
+.wrap{max-width:980px;margin:0 auto;padding:22px 18px 60px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{font-size:1.9rem;letter-spacing:-.02em}h1 span{color:var(--a)}
+.grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:18px;margin-top:20px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+.timer{text-align:center}
+.dial{--p:0;width:210px;height:210px;margin:10px auto;border-radius:50%;background:conic-gradient(var(--a) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center}
+.dial b{width:174px;height:174px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:2.8rem;font-variant-numeric:tabular-nums}
+.modes{display:flex;gap:6px;justify-content:center;margin-bottom:6px}
+button{font:inherit;cursor:pointer}
+.pill{border:1px solid var(--line);background:transparent;color:var(--ink);padding:7px 14px;border-radius:999px}
+.pill[aria-pressed=true]{background:var(--a);color:#fff;border-color:var(--a)}
+.btn{background:var(--a);color:#fff;border:0;padding:11px 22px;border-radius:999px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+form{display:grid;grid-template-columns:1fr 130px auto;gap:8px}
+@media(max-width:560px){form{grid-template-columns:1fr}}
+input,select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;width:100%}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+ul{list-style:none;margin-top:14px;display:grid;gap:8px}
+li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+li.cur{border-color:var(--a);box-shadow:0 0 0 2px color-mix(in srgb,var(--a) 25%,transparent)}
+li.done span{text-decoration:line-through;color:var(--muted)}
+li span{flex:1}
+li small{color:var(--muted)}
+li .x{background:none;border:0;color:var(--muted);font-size:1.1rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;text-align:center}
+.stats div{background:var(--bg);border-radius:14px;padding:10px}.stats b{display:block;font-size:1.5rem}.stats small{color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>Focus<span>Flow</span></h1><button class="pill" id="theme" type="button" aria-pressed="false">Dark mode</button></header>
+<div class="grid">
+  <section class="card timer" aria-label="Pomodoro timer">
+    <div class="modes" role="group" aria-label="Mode"><button class="pill" data-m="25" aria-pressed="true">Focus 25</button><button class="pill" data-m="5" aria-pressed="false">Short 5</button><button class="pill" data-m="15" aria-pressed="false">Long 15</button></div>
+    <div class="dial" id="dial"><b id="clock" role="timer" aria-live="off">25:00</b></div>
+    <p id="now" style="color:var(--muted)">Pick a task, then start.</p>
+    <div class="row"><button class="btn" id="go" type="button">Start</button><button class="btn ghost" id="reset" type="button">Reset</button></div>
+    <div class="stats"><div><b id="sTasks">0</b><small>Tasks done</small></div><div><b id="sSess">0</b><small>Sessions</small></div><div><b id="sMin">0</b><small>Focus min</small></div></div>
+  </section>
+  <section class="card" aria-label="Tasks">
+    <form id="f"><input id="title" placeholder="What are you studying?" aria-label="Task title" required maxlength="80"><select id="sub" aria-label="Subject"><option>General</option><option>Programming</option><option>Math</option><option>Capstone</option></select><button class="btn" type="submit">Add</button></form>
+    <ul id="list"></ul>
+  </section>
+</div>
+<p style="color:var(--muted);font-size:.82rem;margin-top:16px">Data stays in your browser (localStorage). Click a task to focus on it.</p>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)},S;
+try{S=JSON.parse(localStorage.getItem("ff")||"null")}catch(e){S=null}
+S=S||{tasks:[],sess:0,min:0,dark:false};
+function save(){try{localStorage.setItem("ff",JSON.stringify(S))}catch(e){}}
+var mode=25,left=25*60,run=null,cur=null;
+function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+function paint(){$("clock").textContent=fmt(left);$("dial").style.setProperty("--p",100-left/(mode*60)*100);document.title=(run?fmt(left)+" · ":"")+"FocusFlow"}
+function render(){
+  document.documentElement.classList.toggle("dark",S.dark);$("theme").setAttribute("aria-pressed",S.dark);
+  $("list").innerHTML=S.tasks.length?"":'<div class="empty">No tasks yet. Add one above.</div>';
+  S.tasks.forEach(function(t,i){
+    var li=document.createElement("li");li.className=(t.done?"done ":"")+(cur===t.id?"cur":"");
+    var cb=document.createElement("input");cb.type="checkbox";cb.checked=t.done;cb.style.width="auto";cb.setAttribute("aria-label","Done: "+t.title);
+    cb.onchange=function(){t.done=cb.checked;save();render()};
+    var sp=document.createElement("span");sp.textContent=t.title;sp.style.cursor="pointer";sp.onclick=function(){cur=t.id;$("now").textContent="Focusing on: "+t.title;render()};
+    var sm=document.createElement("small");sm.textContent=t.sub+(t.pomos?" · 🍅"+t.pomos:"");
+    var x=document.createElement("button");x.className="x";x.textContent="×";x.setAttribute("aria-label","Delete "+t.title);x.onclick=function(){S.tasks.splice(i,1);save();render()};
+    li.append(cb,sp,sm,x);$("list").appendChild(li);
+  });
+  $("sTasks").textContent=S.tasks.filter(function(t){return t.done}).length;$("sSess").textContent=S.sess;$("sMin").textContent=S.min;
+}
+function beep(){try{var a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);g.gain.value=.08;o.frequency.value=660;o.start();o.stop(a.currentTime+.35)}catch(e){}}
+function tick(){
+  left--;paint();
+  if(left<=0){clearInterval(run);run=null;$("go").textContent="Start";beep();
+    if(mode===25){S.sess++;S.min+=25;var t=S.tasks.filter(function(x){return x.id===cur})[0];if(t)t.pomos=(t.pomos||0)+1;save();render()}
+    $("now").textContent="Time's up! Take a break or start again.";left=mode*60;paint()}
+}
+$("go").onclick=function(){if(run){clearInterval(run);run=null;this.textContent="Resume"}else{run=setInterval(tick,1000);this.textContent="Pause"}};
+$("reset").onclick=function(){clearInterval(run);run=null;left=mode*60;$("go").textContent="Start";paint()};
+document.querySelectorAll(".modes button").forEach(function(b){b.onclick=function(){document.querySelectorAll(".modes button").forEach(function(x){x.setAttribute("aria-pressed",false)});b.setAttribute("aria-pressed",true);mode=+b.dataset.m;$("reset").click()}});
+$("f").onsubmit=function(e){e.preventDefault();var v=$("title").value.trim();if(!v)return;S.tasks.unshift({id:Date.now(),title:v,sub:$("sub").value,done:false,pomos:0});$("title").value="";save();render()};
+$("theme").onclick=function(){S.dark=!S.dark;save();render()};
+paint();render();
+</script>
+</body>
+</html>

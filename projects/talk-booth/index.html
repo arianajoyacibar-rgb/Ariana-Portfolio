@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talk Booth — make your mascot talk</title>
+<meta name="theme-color" content="#14161c">
+<style>
+:root{--bg:#14161c;--card:#1c1f27;--line:#2b303b;--ink:#f1f2f6;--muted:#9aa1b0;--a:#ffcf5a;--b:#7c9cff}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 56px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em}h1 span{color:var(--a)}
+.lang button{background:var(--card);color:var(--ink);border:1px solid var(--line);padding:6px 12px;cursor:pointer}
+.lang button:first-child{border-radius:999px 0 0 999px}.lang button:last-child{border-radius:0 999px 999px 0}
+.lang button[aria-pressed=true]{background:var(--a);color:#1b1500;border-color:var(--a)}
+.sub{color:var(--muted);margin:6px 0 22px}
+.main{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:860px){.main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.step{display:flex;align-items:center;gap:10px;font-weight:700;margin:16px 0 8px}.step:first-child{margin-top:0}
+.step i{width:26px;height:26px;border-radius:50%;background:var(--a);color:#1b1500;display:grid;place-items:center;font-style:normal;font-size:.85rem}
+textarea,select,input[type=range]{width:100%;background:#12141a;border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:10px;font:inherit}
+textarea{min-height:96px;resize:vertical}input[type=range]{padding:0;accent-color:var(--a)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:var(--a);color:#1b1500;border:0;border-radius:999px;padding:10px 18px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.ratio button{background:#12141a;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer}
+.ratio button[aria-pressed=true]{border-color:var(--a);color:var(--a)}
+button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+.stage{display:grid;place-items:center;background:repeating-conic-gradient(#171a21 0 25%,#13151b 0 50%) 0 0/28px 28px;border-radius:14px;padding:14px;min-height:340px}
+canvas{max-width:100%;max-height:440px;border-radius:12px;background:#222733}
+.timer{font-variant-numeric:tabular-nums;color:var(--muted);margin-top:10px;display:flex;justify-content:space-between}
+.hint{color:var(--muted);font-size:.82rem;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Talk <span>Booth</span></h1>
+  <div class="lang" role="group" aria-label="Language"><button id="en" aria-pressed="true">EN</button><button id="tl" aria-pressed="false">TL</button></div>
+</header>
+<p class="sub" id="sub"></p>
+<div class="main">
+  <section class="card" aria-label="Controls">
+    <div class="step"><i>1</i><span id="s1"></span></div>
+    <div class="row"><label class="btn ghost" for="file" id="up"></label><input id="file" type="file" accept="image/*" hidden><button class="btn ghost" id="def" type="button"></button></div>
+    <div class="step"><i>2</i><span id="s2"></span></div>
+    <textarea id="text" aria-label="Script"></textarea>
+    <div class="step"><i>3</i><span id="s3"></span></div>
+    <select id="voice" aria-label="Voice"></select>
+    <div class="row" style="margin-top:8px"><div style="flex:1"><small id="lp"></small><input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1"></div><div style="flex:1"><small id="lr"></small><input type="range" id="rate" min="0.6" max="1.6" step="0.1" value="1"></div></div>
+    <div class="step"><i>4</i><span id="s4"></span></div>
+    <div class="ratio row" role="group" aria-label="Aspect ratio"><button data-r="9/16" aria-pressed="false">9:16</button><button data-r="1/1" aria-pressed="true">1:1</button><button data-r="16/9" aria-pressed="false">16:9</button></div>
+    <div class="step"><i>5</i><span id="s5"></span></div>
+    <div class="row"><button class="btn" id="play" type="button"></button><button class="btn ghost" id="stop" type="button"></button><button class="btn ghost" id="rec" type="button"></button></div>
+    <p class="hint" id="hint"></p>
+  </section>
+  <section class="card" aria-label="Preview">
+    <div class="stage"><canvas id="cv" width="720" height="720" aria-label="Mascot preview"></canvas></div>
+    <div class="timer"><span id="tm">0.0s</span><span id="st"></span></div>
+  </section>
+</div>
+</div>
+<script>
+var T={en:{sub:"Upload a mascot, give it a voice, and watch it talk. Runs fully in your browser.",s1:"Choose your mascot",s2:"Write what it says",s3:"Pick a voice",s4:"Pick a format",s5:"Play or record",up:"Upload image",def:"Use sample mascot",play:"▶ Talk",stop:"■ Stop",rec:"● Record clip",pitch:"Pitch",rate:"Speed",hint:"Record saves the animation as a silent WebM clip. Browsers cannot capture the speech audio, so add a voiceover in your editor.",idle:"Ready",talking:"Talking…",rec2:"Recording…",saved:"Clip ready",text:"Hi! I'm your mascot. Nice to meet you!"},
+ tl:{sub:"Mag-upload ng mascot, bigyan ng boses, at panoorin itong magsalita. Gumagana nang buo sa browser mo.",s1:"Piliin ang mascot",s2:"Isulat ang sasabihin",s3:"Pumili ng boses",s4:"Pumili ng format",s5:"I-play o i-record",up:"Mag-upload ng larawan",def:"Gamitin ang sample",play:"▶ Magsalita",stop:"■ Ihinto",rec:"● I-record",pitch:"Tono",rate:"Bilis",hint:"Sine-save ng Record ang animation bilang silent WebM. Hindi makukuha ng browser ang audio, kaya magdagdag ng voiceover sa editor.",idle:"Handa na",talking:"Nagsasalita…",rec2:"Nagre-record…",saved:"Handa na ang clip",text:"Kumusta! Ako ang mascot mo. Ikinagagalak kitang makilala!"}};
+var L="en",$=function(i){return document.getElementById(i)},cv=$("cv"),ctx=cv.getContext("2d"),img=null,ratio="1/1",talking=false,amp=0,t0=0,voices=[],recorder=null;
+function tr(){var d=T[L];["sub","s1","s2","s3","s4","s5","up","def","play","stop","rec","hint"].forEach(function(k){$(k).textContent=d[k]});$("lp").textContent=d.pitch;$("lr").textContent=d.rate;$("st").textContent=d.idle;
+  if(!$("text").dataset.edited)$("text").value=d.text;$("en").setAttribute("aria-pressed",L==="en");$("tl").setAttribute("aria-pressed",L==="tl");fillVoices();document.documentElement.lang=L}
+function fillVoices(){
+  voices=(window.speechSynthesis?speechSynthesis.getVoices():[]);var pref=voices.filter(function(v){return v.lang.toLowerCase().indexOf(L==="en"?"en":"fil")===0||v.lang.toLowerCase().indexOf("tl")===0&&L==="tl"});
+  var list=pref.length?pref:voices;$("voice").innerHTML=list.length?"":"<option>Default voice</option>";
+  list.forEach(function(v){var o=document.createElement("option");o.value=v.name;o.textContent=v.name+" ("+v.lang+")";$("voice").appendChild(o)});
+}
+if(window.speechSynthesis)speechSynthesis.onvoiceschanged=fillVoices;
+function sizeCanvas(){var p=ratio.split("/").map(Number),w=720,h=Math.round(w*p[1]/p[0]);if(h>1280){h=1280}cv.width=p[0]>p[1]?1280:720;cv.height=Math.round(cv.width*p[1]/p[0])}
+function sample(){
+  var c=document.createElement("canvas");c.width=c.height=400;var x=c.getContext("2d");
+  x.fillStyle="#ffcf5a";x.beginPath();x.arc(200,210,150,0,7);x.fill();
+  x.fillStyle="#ff9d3a";x.beginPath();x.arc(120,80,40,0,7);x.arc(280,80,40,0,7);x.fill();
+  x.fillStyle="#1b1500";x.beginPath();x.arc(150,180,16,0,7);x.arc(250,180,16,0,7);x.fill();
+  x.fillStyle="#ff6b6b";x.beginPath();x.arc(120,235,16,0,7);x.arc(280,235,16,0,7);x.fill();
+  x.strokeStyle="#1b1500";x.lineWidth=8;x.lineCap="round";x.beginPath();x.arc(200,230,45,0.15*Math.PI,0.85*Math.PI);x.stroke();
+  var i=new Image();i.onload=function(){img=i};i.src=c.toDataURL();
+}
+function draw(now){
+  var w=cv.width,h=cv.height;ctx.clearRect(0,0,w,h);
+  var g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,"#2a3350");g.addColorStop(1,"#1a1d2a");ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  if(img){
+    var s=Math.min(w,h)*0.78/Math.max(img.width,img.height)*Math.max(img.width,img.height)/Math.max(img.width,img.height);
+    var base=Math.min(w,h)*0.78,sc=base/Math.max(img.width,img.height);
+    var bob=Math.sin(now/180)*(talking?10:3)*(w/720),squash=1+amp*0.06,stretch=1-amp*0.04;
+    var dw=img.width*sc*squash,dh=img.height*sc*stretch;
+    ctx.save();ctx.translate(w/2,h/2+bob);ctx.rotate(Math.sin(now/260)*(talking?0.04:0.01));
+    ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(0,dh/2+8,dw*0.35,12,0,0,7);ctx.fill();
+    ctx.drawImage(img,-dw/2,-dh/2,dw,dh);ctx.restore();
+  }
+  amp*=0.9;
+  if(talking)$("tm").textContent=((now-t0)/1000).toFixed(1)+"s";
+  requestAnimationFrame(draw);
+}
+function speak(){
+  if(!window.speechSynthesis){$("st").textContent="Speech not supported";return}
+  speechSynthesis.cancel();var u=new SpeechSynthesisUtterance($("text").value||" ");
+  var v=voices.filter(function(x){return x.name===$("voice").value})[0];if(v){u.voice=v;u.lang=v.lang}else u.lang=L==="en"?"en-US":"fil-PH";
+  u.pitch=+$("pitch").value;u.rate=+$("rate").value;
+  u.onstart=function(){talking=true;t0=performance.now();$("st").textContent=T[L].talking};
+  u.onboundary=function(){amp=1};
+  var pulse=setInterval(function(){if(talking)amp=Math.max(amp,0.5)},160);
+  u.onend=u.onerror=function(){talking=false;clearInterval(pulse);$("st").textContent=T[L].idle;if(recorder&&recorder.state==="recording")setTimeout(function(){recorder.stop()},400)};
+  speechSynthesis.speak(u);
+}
+$("play").onclick=speak;
+$("stop").onclick=function(){if(window.speechSynthesis)speechSynthesis.cancel();talking=false;if(recorder&&recorder.state==="recording")recorder.stop()};
+$("rec").onclick=function(){
+  if(!cv.captureStream||!window.MediaRecorder){$("st").textContent="Recording not supported";return}
+  var chunks=[],rs=cv.captureStream(30);recorder=new MediaRecorder(rs);
+  recorder.ondataavailable=function(e){chunks.push(e.data)};
+  recorder.onstop=function(){var url=URL.createObjectURL(new Blob(chunks,{type:"video/webm"})),a=document.createElement("a");a.href=url;a.download="talk-booth-clip.webm";a.click();$("st").textContent=T[L].saved};
+  recorder.start();$("st").textContent=T[L].rec2;speak();
+};
+$("file").onchange=function(e){var f=e.target.files[0];if(!f)return;var i=new Image();i.onload=function(){img=i};i.src=URL.createObjectURL(f)};
+$("def").onclick=sample;
+$("text").oninput=function(){this.dataset.edited=1};
+document.querySelectorAll(".ratio button").forEach(function(b){b.onclick=function(){document.querySelectorAll(".ratio button").forEach(function(x){x.setAttribute("aria-pressed",false)});b.setAttribute("aria-pressed",true);ratio=b.dataset.r;sizeCanvas()}});
+$("en").onclick=function(){L="en";tr()};$("tl").onclick=function(){L="tl";tr()};
+sample();sizeCanvas();tr();requestAnimationFrame(draw);
+</script>
+</body>
+</html>

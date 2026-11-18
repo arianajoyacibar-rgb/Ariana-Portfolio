@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScamShield — check a text message or link before you tap</title>
+<meta name="description" content="Paste a suspicious text or link. ScamShield explains the red flags in plain words, with examples built around fake bank, e-wallet and delivery scams.">
+<style>
+:root{--bg:#fff7f3;--ink:#2a1410;--muted:#7a5a52;--line:#f0d9d0;--brand:#d9480f;--dark:#3b1208;--safe:#15803d;--warn:#b45309;--bad:#be123c;--card:#fff}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,textarea,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #2563eb;outline-offset:2px;border-radius:8px}
+header{background:var(--dark);color:#fff;padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:1.15rem;margin-right:auto;display:flex;gap:10px;align-items:center}
+header h1 i{font-style:normal;background:#ff922b;color:var(--dark);width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:900}
+.tabs{display:flex;gap:4px}.tabs button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:9px;padding:7px 14px;font-weight:700;cursor:pointer}
+.tabs button[aria-pressed=true]{background:#fff;color:var(--dark)}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{font-size:1.02rem;margin-bottom:10px}
+textarea{width:100%;min-height:130px;border:1.5px solid var(--line);border-radius:12px;padding:12px;background:#fff;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.btn{border:1.5px solid var(--brand);color:var(--brand);background:#fff;border-radius:10px;padding:8px 15px;font-weight:700;cursor:pointer}
+.btn:hover{background:#fff1ea}.btn.fill{background:var(--brand);color:#fff}.btn.fill:hover{background:#b83c08}
+.ex{display:flex;gap:6px;flex-wrap:wrap}.ex button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 11px;font-size:.83rem;cursor:pointer}
+.res{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:start}
+@media(max-width:640px){.res{grid-template-columns:1fr}}
+.gauge{--p:0;--c:var(--safe);width:140px;height:140px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),#f3e6e0 0);display:grid;place-items:center;margin:auto}
+.gauge div{width:108px;height:108px;border-radius:50%;background:#fff;display:grid;place-items:center;text-align:center;line-height:1.1}
+.gauge b{font-size:2rem;display:block}.gauge small{font-weight:700;color:var(--muted)}
+.verdict{font-size:1.25rem;font-weight:800}
+.flags{list-style:none;display:grid;gap:8px;margin:10px 0}
+.flags li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;background:#fff6f1;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.flags b{font-size:.92rem}.flags small{display:block;color:var(--muted)}
+.flags .w{font-weight:800;color:var(--bad)}
+.msgbox{background:#faf5f2;border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-word;margin-top:10px}
+mark{background:#ffd8a8;border-radius:3px;padding:0 2px}mark.bad{background:#ffc9c9}
+.todo{background:#eefbf3;border:1px solid #b7ebc9;border-radius:12px;padding:12px 14px;margin-top:10px}
+.todo ul{padding-left:1.1em}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.ok{color:var(--safe);font-weight:800}.no{color:var(--bad);font-weight:800}
+.mx{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.mx div{background:#fff6f1;border-radius:12px;padding:10px 12px}.mx b{display:block;font-size:1.5rem}
+.hint{color:var(--muted);font-size:.84rem}
+input[type=range]{width:220px;accent-color:var(--brand)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1><i>S</i> ScamShield</h1><div class="tabs" role="group" aria-label="View"><button type="button" data-v="check" aria-pressed="true">Check a message</button><button type="button" data-v="eval" aria-pressed="false">Test the detector</button></div></header>
+<main>
+<section id="vcheck">
+  <div class="card">
+    <h2>Paste a text message, email or link</h2>
+    <textarea id="inp" aria-label="Message or link" placeholder="Paste here. Nothing leaves your device."></textarea>
+    <div class="row"><button class="btn fill" id="go" type="button">Check it</button><button class="btn" id="clear" type="button">Clear</button><span class="hint">Try an example:</span><div class="ex" id="ex"></div></div>
+  </div>
+  <div class="card" id="out" hidden aria-live="polite"></div>
+  <div class="card"><h2>Quick rules that always apply</h2><ul style="padding-left:1.1em"><li>Banks, GCash, Maya and couriers never ask for your OTP, PIN or password.</li><li>Open the official app yourself instead of tapping a link in a message.</li><li>A prize you did not enter for, or a fee to release a parcel, is a scam signal.</li><li>If it makes you rush, stop. Real accounts are not closed in 24 hours by a text.</li></ul></div>
+</section>
+<section id="veval" hidden>
+  <div class="card">
+    <h2>How good is the detector?</h2>
+    <p class="hint">20 made-up messages, 10 scams and 10 legitimate, each labeled by hand. Move the threshold to see the trade-off: a low threshold catches more scams but also flags real messages.</p>
+    <div class="row"><label for="th"><b>Flag as scam when score is at least <span id="thv">40</span></b></label><input type="range" id="th" min="10" max="90" value="40"></div>
+    <div class="mx" id="mx"></div>
+    <table><thead><tr><th>Message</th><th>Label</th><th>Score</th><th>Result</th></tr></thead><tbody id="etb"></tbody></table>
+  </div>
+</section>
+</main>
+<script>
+var $=function(i){return document.getElementById(i)};
+var OFFICIAL={gcash:['gcash.com'],maya:['maya.ph','paymaya.com'],bdo:['bdo.com.ph'],bpi:['bpi.com.ph'],metrobank:['metrobank.com.ph'],lbc:['lbcexpress.com'],'j&t':['jtexpress.ph'],jnt:['jtexpress.ph'],shopee:['shopee.ph'],lazada:['lazada.com.ph'],landbank:['landbank.com'],unionbank:['unionbankph.com'],globe:['globe.com.ph'],smart:['smart.com.ph']};
+var SHORT=/(^|\.)(bit\.ly|tinyurl\.com|cutt\.ly|t\.co|is\.gd|rb\.gy|shorturl\.at|tiny\.cc)$/;
+var RULES=[
+ {id:'otp',w:40,re:/\b(otp|one[- ]time (pin|password)|pin|mpin|password|cvv|verification code|security code)\b/i,t:'Asks for a code or password',d:'Real banks and e-wallets never ask you to send your OTP, PIN or password.'},
+ {id:'urg',w:18,re:/\b(within \d+ ?(hours?|hrs?|minutes?|mins?)|immediately|urgent|right now|agad|ngayon na|last (chance|warning)|expires? (today|soon)|final notice|act now|today only)\b/i,t:'Pressure to act fast',d:'Scammers create a deadline so you do not stop and check.'},
+ {id:'lock',w:22,re:/\b(suspend(ed)?|deactivat(ed|ion)|locked|limited|blocked|closed|unauthori[sz]ed|unusual activity|failed to verify|will be (closed|blocked|disabled))\b/i,t:'Threat to your account',d:'Fake alerts claim your account is locked so you tap the link.'},
+ {id:'prize',w:30,re:/\b(congratulations|you('| ha)ve won|winner|raffle|claim your (prize|reward|gift)|free (gift|load|data)|nanalo ka|lucky)\b/i,t:'Surprise prize or gift',d:'You cannot win a raffle you never joined.'},
+ {id:'fee',w:30,re:/\b(shipping fee|customs fee|release fee|redelivery fee|pay (a )?(small )?fee|unpaid (fee|balance)|failed delivery|parcel (is )?(on hold|held)|package (is )?(on hold|held))\b/i,t:'Fee to release a parcel',d:'Couriers do not ask for payment by text link for held parcels.'},
+ {id:'pay',w:25,re:/(₱|php|p)\s?\d[\d,]{3,}\s*(\/|per|a)\s*(day|week|hour)|earn (up to )?(₱|php|p)?\s?\d[\d,]{3,}/i,t:'Too-good-to-be-true pay',d:'Unrealistic pay for simple tasks is a common recruitment scam.'},
+ {id:'wfh',w:20,re:/work from home|easy (income|money)|no experience (needed|required)|hiring now/i,t:'Vague job offer',d:'Real employers name the company, role and requirements.'},
+ {id:'click',w:12,re:/\b(click|tap|open|visit|log ?in|sign ?in|verify|update|confirm)\b.{0,40}\b(link|here|below|now|account|details)\b/i,t:'Tells you to tap a link',d:'Go to the official app or site yourself instead.'},
+ {id:'ask',w:22,re:/\b(send|reply with|provide|give|confirm)\b.{0,30}\b(your )?(account number|card number|full name|birth ?date|mother'?s maiden name|selfie|id photo|login)\b/i,t:'Asks for personal details',d:'Never share account or ID details through a text.'},
+ {id:'gen',w:8,re:/\b(dear (customer|user|client|member|valued)|kind(ly)? (attention|regards)|sir\/ma'?am)\b/i,t:'Generic greeting',d:'Real messages usually use your name.'},
+ {id:'cry',w:15,re:/\b(bitcoin|crypto|usdt|investment (opportunity|plan)|guaranteed (profit|returns?)|double your money)\b/i,t:'Guaranteed investment returns',d:'No honest investment guarantees profit.'}
+];
+function hostOf(u){try{return new URL(/^https?:\/\//i.test(u)?u:'http://'+u).hostname.toLowerCase().replace(/^www\./,'')}catch(e){return ''}}
+function urlFlags(text){
+  var urls=text.match(/(?:https?:\/\/|www\.)[^\s<>"')]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|ph|xyz|top|click|icu|link|site|online|info|co|me|ly|gl|cc)(?:\/[^\s]*)?/gi)||[],fl=[],seen={};
+  urls.forEach(function(u){var h=hostOf(u);if(!h||seen[h])return;seen[h]=1;
+    var off=false,brand=null;Object.keys(OFFICIAL).forEach(function(b){var clean=h.replace(/[-.]/g,'');if(clean.indexOf(b.replace('&',''))>-1){brand=b;OFFICIAL[b].forEach(function(d){if(h===d||h.slice(-d.length-1)==='.'+d)off=true})}});
+    if(brand&&!off)fl.push({w:45,t:'Link looks like '+brand.toUpperCase()+' but is not',d:'"'+h+'" is not an official '+brand+' address. Official: '+OFFICIAL[brand].join(', ')+'.',m:u});
+    else if(SHORT.test(h))fl.push({w:22,t:'Shortened link',d:'"'+h+'" hides where you are going.',m:u});
+    else if(/^\d{1,3}(\.\d{1,3}){3}$/.test(h))fl.push({w:35,t:'Link is a raw IP address',d:'Legitimate services use proper domain names.',m:u});
+    else if(/\.(xyz|top|click|icu|link|site|online)$/.test(h))fl.push({w:20,t:'Unusual link ending',d:'"'+h+'" uses an ending often seen in throwaway scam sites.',m:u});
+    else if(/xn--/.test(h)||(h.match(/-/g)||[]).length>=2)fl.push({w:15,t:'Odd-looking domain',d:'"'+h+'" has several hyphens or look-alike characters.',m:u});
+    if(/^http:\/\//i.test(u))fl.push({w:8,t:'Link is not encrypted (http)',d:'Real login pages use https.',m:u});
+  });return fl;
+}
+function analyze(text){
+  var fl=[];RULES.forEach(function(r){var m=text.match(r.re);if(m&&r.id==='otp'&&/(do not|don't|never|huwag)\s+(share|give|send|i-share)/i.test(text))m=null;if(m)fl.push({w:r.w,t:r.t,d:r.d,m:m[0]})});
+  urlFlags(text).forEach(function(f){fl.push(f)});
+  var s=Math.min(100,fl.reduce(function(a,f){return a+f.w},0));
+  return{score:s,flags:fl.sort(function(a,b){return b.w-a.w})};
+}
+function verdict(s,th){th=th||40;return s>=Math.max(60,th+25)?['Likely a scam','var(--bad)']:s>=th?['Suspicious','var(--warn)']:s>=15?['Probably fine, stay careful','var(--warn)']:['No red flags found','var(--safe)']}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function hl(text,fl){var out=esc(text);fl.forEach(function(f){var e=esc(f.m).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');out=out.replace(new RegExp(e),function(x){return '<mark class="'+(f.w>=30?'bad':'')+'">'+x+'</mark>'})});return out}
+function show(){
+  var t=$('inp').value.trim();if(!t){$('out').hidden=true;return}
+  var a=analyze(t),v=verdict(a.score);$('out').hidden=false;
+  $('out').innerHTML='<div class="res"><div class="gauge" style="--p:'+a.score+';--c:'+v[1]+'"><div><span><b>'+a.score+'</b><small>risk score</small></span></div></div><div><div class="verdict" style="color:'+v[1]+'">'+v[0]+'</div>'+
+  (a.flags.length?'<ul class="flags">'+a.flags.map(function(f){return '<li><span aria-hidden="true">⚠️</span><div><b>'+esc(f.t)+'</b><small>'+esc(f.d)+'</small></div><span class="w">+'+f.w+'</span></li>'}).join('')+'</ul>':'<p class="hint" style="margin:8px 0">None of the known scam patterns matched. A clean score is not a guarantee, so verify through the official app if money or accounts are involved.</p>')+
+  '<div class="msgbox">'+hl(t,a.flags)+'</div>'+
+  (a.score>=40?'<div class="todo"><b>What to do</b><ul><li>Do not tap the link or reply.</li><li>Never send an OTP, PIN or password.</li><li>Check your account by opening the official app yourself.</li><li>Report the number or page to the company and block the sender.</li></ul></div>':'')+'</div></div>';
+}
+$('go').onclick=show;$('clear').onclick=function(){$('inp').value='';$('out').hidden=true;$('inp').focus()};
+var EX=[['Fake e-wallet','GCash: Your account has been LIMITED due to unusual activity. Verify your details within 24 hours to avoid closure: http://gcash-verify-ph.xyz/login'],['Parcel fee','J&T Express: Your parcel is on hold. Pay the shipping fee of P35 today at bit.ly/jnt-redeliver or it will be returned.'],['Prize','Congratulations! You have won P50,000 in the Shopee anniversary raffle. Reply with your full name and account number to claim your prize.'],['Real OTP','Your Maya OTP is 482913. Do not share this code with anyone, including Maya staff.']];
+$('ex').innerHTML=EX.map(function(e,i){return '<button type="button" data-i="'+i+'">'+e[0]+'</button>'}).join('');
+$('ex').onclick=function(e){var i=e.target.dataset.i;if(i==null)return;$('inp').value=EX[+i][1];show()};
+/* evaluation set: fictional, hand-labeled */
+var SET=[
+[1,'GCash: Your account is LIMITED. Verify within 24 hours: http://gcash-secure-login.top/verify'],
+[1,'Dear customer, your BDO account will be blocked. Click here to confirm your details: bit.ly/bdo-update'],
+[1,'Congratulations! You won in our raffle. Send your account number to claim your prize now.'],
+[1,'LBC: Parcel on hold. Pay redelivery fee P25 at http://lbc-ph-track.xyz'],
+[1,'Hiring now! Work from home, earn P2,000 per day. No experience needed. Message us to start.'],
+[1,'Maya: Unusual activity detected. Reply with your OTP to stop the unauthorized transfer.'],
+[1,'Guaranteed profit! Double your money with our crypto investment plan. Limited slots, act now.'],
+[1,'Final notice: your Globe account is suspended. Update here: http://globe-billing.click/pay'],
+[1,'Free load! Tap the link below to claim your free data today only: tinyurl.com/freeload-ph'],
+[1,'Your Shopee parcel has a failed delivery. Confirm your details at http://shopee-delivery.icu to avoid return.'],
+[0,'Your Maya OTP is 482913. Do not share this code with anyone.'],
+[0,'Hi Ana, class is moved to Room 204 tomorrow at 9am. See you there.'],
+[0,'Your GCash payment of P150 to Mang Tonyo was successful. Ref no. 8821 4471.'],
+[0,'Reminder: Your barangay clearance is ready for pick up at the hall, Monday to Friday, 8am to 5pm.'],
+[0,'Hello, this is Ma\'am Reyes. Please submit your capstone draft on the portal by Friday.'],
+[0,'Your J&T parcel was delivered. Thank you for shopping with us! Track at jtexpress.ph'],
+[0,'Mom: Pasundo na lang ako sa gate mamaya, 5pm. Huwag kalimutan ang payong.'],
+[0,'BDO: You logged in to online banking at 10:42 PM. If this was not you, call the number on the back of your card.'],
+[0,'Lazada: Your order #44921 has shipped and will arrive in 3 to 5 days. View it in the app.'],
+[0,'Interview schedule: Thursday 2pm at our Cabanatuan office. Bring a copy of your resume. Reply YES to confirm.']];
+function evalRender(){
+  var th=+$('th').value;$('thv').textContent=th;var tp=0,fp=0,fn=0,tn=0;
+  $('etb').innerHTML=SET.map(function(r){var s=analyze(r[1]).score,pred=s>=th?1:0;if(r[0]&&pred)tp++;else if(!r[0]&&pred)fp++;else if(r[0]&&!pred)fn++;else tn++;
+    return '<tr><td>'+esc(r[1].length>86?r[1].slice(0,86)+'…':r[1])+'</td><td>'+(r[0]?'Scam':'Legit')+'</td><td>'+s+'</td><td class="'+(pred===r[0]?'ok':'no')+'">'+(pred===r[0]?'Correct':(pred?'False alarm':'Missed'))+'</td></tr>'}).join('');
+  var pr=tp+fp?tp/(tp+fp):0,rc=tp+fn?tp/(tp+fn):0,f1=pr+rc?2*pr*rc/(pr+rc):0,pc=function(x){return Math.round(x*100)+'%'};
+  $('mx').innerHTML='<div><b>'+pc(pr)+'</b>Precision</div><div><b>'+pc(rc)+'</b>Recall</div><div><b>'+pc(f1)+'</b>F1 score</div><div><b>'+tp+' / '+fp+' / '+fn+' / '+tn+'</b>TP / FP / FN / TN</div>';
+}
+$('th').oninput=evalRender;evalRender();
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});$('vcheck').hidden=b.dataset.v!=='check';$('veval').hidden=b.dataset.v!=='eval'}});
+</script>
+</body>
+</html>

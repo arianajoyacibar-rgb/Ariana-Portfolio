@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SagipAlert — disaster preparedness for your barangay</title>
+<meta name="description" content="Typhoon, flood and earthquake guidance, a go-bag checklist, a family plan, an evacuation map and community reports. All data stays on your device and it works offline.">
+<style>
+:root{--bg:#eef4fb;--ink:#0c1f3a;--muted:#546a88;--line:#d6e2f2;--brand:#1d4ed8;--dark:#0b1f4a;--red:#dc2626;--amber:#d97706;--green:#16a34a;--card:#fff}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #f59e0b;outline-offset:2px;border-radius:8px}
+header{background:var(--dark);color:#fff;padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:1.15rem;margin-right:auto;display:flex;gap:10px;align-items:center}
+header h1 i{font-style:normal;background:#fbbf24;color:var(--dark);width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:900}
+.net{font-size:.82rem;font-weight:700;border-radius:999px;padding:3px 11px;background:#14532d;color:#dcfce7}.net.off{background:#78350f;color:#fef3c7}
+.sos{background:#dc2626;color:#fff;border:0;border-radius:10px;padding:7px 14px;font-weight:800;cursor:pointer}
+.tabs{display:flex;gap:4px;overflow:auto;padding:10px 16px 0;max-width:1180px;margin:0 auto}
+.tabs button{border:0;background:#dbe6f6;border-radius:10px 10px 0 0;padding:9px 16px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tabs button[aria-pressed=true]{background:#fff;color:var(--brand)}
+main{max-width:1180px;margin:0 auto;padding:0 16px 24px}
+.pane{background:#fff;border:1px solid var(--line);border-radius:0 14px 14px 14px;padding:18px}
+.alert{border-radius:14px;padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
+.alert.red{background:#fee2e2;border:1.5px solid #fca5a5}.alert.amber{background:#fef3c7;border:1.5px solid #fcd34d}.alert.green{background:#dcfce7;border:1.5px solid #86efac}
+.alert .lv{font-weight:900;font-size:1.1rem;border-radius:10px;padding:8px 12px;color:#fff}
+.alert.red .lv{background:var(--red)}.alert.amber .lv{background:var(--amber)}.alert.green .lv{background:var(--green)}
+.alert small{color:#5b4a2a;display:block}
+h2{font-size:1.05rem;margin:4px 0 10px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.box{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fbfdff}
+.hz{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.hz button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer}
+.hz button[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+ul.steps{padding-left:1.1em;display:grid;gap:5px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.chk{list-style:none;display:grid;gap:6px;padding:0}
+.chk label{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;background:#fff}
+.chk input{width:18px;height:18px;accent-color:var(--green)}
+.chk input:checked+span{text-decoration:line-through;color:var(--muted)}
+.prog{height:10px;border-radius:10px;background:#e2e8f0;overflow:hidden;margin:8px 0 12px}.prog u{display:block;height:100%;background:var(--green);transition:width .3s;text-decoration:none}
+input[type=text],input[type=tel],select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+label.l{font-size:.76rem;font-weight:700;color:var(--muted);display:block;margin:8px 0 2px}
+.btn{border:1.5px solid var(--brand);color:var(--brand);background:#fff;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer}.btn.fill{background:var(--brand);color:#fff}
+.map{width:100%;height:auto;border-radius:12px;background:#e6f0e0;border:1px solid var(--line)}
+.map g.c{cursor:pointer}
+.rep{list-style:none;display:grid;gap:8px;margin-top:10px}
+.rep li{border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.tag{border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:800}.tag.Flood{background:#dbeafe;color:#1e3a8a}.tag.Blocked{background:#fef3c7;color:#78350f}.tag.Help{background:#fee2e2;color:#7f1d1d}.tag.Safe{background:#dcfce7;color:#14532d}
+.hint{color:var(--muted);font-size:.84rem}
+.rep button{border:0;background:#fee2e2;color:#991b1b;border-radius:8px;width:26px;height:26px;cursor:pointer}
+dialog{border:0;border-radius:16px;padding:22px;max-width:420px;width:92%}dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h3{color:var(--red);margin-bottom:8px}dialog a{display:block;font-size:1.3rem;font-weight:800;margin:6px 0}
+[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1><i>S</i> SagipAlert</h1>
+  <span class="net" id="net">Online</span>
+  <button class="sos" id="sos" type="button">Emergency numbers</button>
+</header>
+<div class="tabs" role="group" aria-label="Sections" id="tabs">
+  <button type="button" data-v="now" aria-pressed="true">Alerts</button><button type="button" data-v="guide" aria-pressed="false">What to do</button><button type="button" data-v="bag" aria-pressed="false">Go-bag</button><button type="button" data-v="map" aria-pressed="false">Evacuation map</button><button type="button" data-v="plan" aria-pressed="false">Family plan</button><button type="button" data-v="rep" aria-pressed="false">Community reports</button>
+</div>
+<main><div class="pane">
+
+<section id="v-now">
+  <div class="alert amber"><span class="lv">SIGNAL #2</span><div><b>Sample alert: Tropical cyclone, strong winds expected in 24 hours</b><small>This is practice data to show how alerts look. For real warnings, check PAGASA and your local DRRMO.</small></div></div>
+  <div class="two">
+    <div class="box"><h2>Wind signals at a glance</h2>
+      <table><thead><tr><th>Signal</th><th>Wind</th><th>Lead time</th></tr></thead><tbody>
+      <tr><td>#1</td><td>39 to 61 km/h</td><td>36 hours</td></tr><tr><td>#2</td><td>62 to 88 km/h</td><td>24 hours</td></tr><tr><td>#3</td><td>89 to 117 km/h</td><td>18 hours</td></tr><tr><td>#4</td><td>118 to 184 km/h</td><td>12 hours</td></tr><tr><td>#5</td><td>185 km/h or more</td><td>12 hours</td></tr></tbody></table>
+      <p class="hint" style="margin-top:6px">Ranges from PAGASA's tropical cyclone wind signal system. Confirm on pagasa.dost.gov.ph.</p></div>
+    <div class="box"><h2>Your readiness</h2>
+      <p>Go-bag packed: <b id="rBag">0%</b></p><div class="prog"><u id="rBagBar" style="width:0"></u></div>
+      <p>Family contacts saved: <b id="rCon">0</b></p>
+      <p>Evacuation center chosen: <b id="rEvac">Not yet</b></p>
+      <p style="margin-top:10px"><button class="btn fill" type="button" data-go="bag">Finish my go-bag</button></p></div>
+  </div>
+</section>
+
+<section id="v-guide" hidden>
+  <div class="hz" id="hz" role="group" aria-label="Hazard"><button type="button" data-h="typhoon" aria-pressed="true">Typhoon</button><button type="button" data-h="flood" aria-pressed="false">Flood</button><button type="button" data-h="quake" aria-pressed="false">Earthquake</button></div>
+  <div class="two" id="guide"></div>
+</section>
+
+<section id="v-bag" hidden>
+  <h2>Go-bag checklist <span class="hint" id="bagc"></span></h2>
+  <div class="prog"><u id="bagbar" style="width:0"></u></div>
+  <ul class="chk" id="bag"></ul>
+</section>
+
+<section id="v-map" hidden>
+  <div class="two">
+    <div><h2>Evacuation map (practice barangay)</h2>
+      <svg class="map" id="svg" viewBox="0 0 600 420" role="img" aria-label="Schematic map of the practice barangay with evacuation centers and a flood-prone zone">
+        <rect width="600" height="420" fill="#e6f0e0"/>
+        <path d="M0 300 C120 260 200 330 320 290 S520 250 600 280 L600 340 C520 310 420 350 320 345 S120 320 0 360Z" fill="#8ec5f4"/>
+        <text x="30" y="335" font-size="12" fill="#1e3a8a">Pag-asa River</text>
+        <rect x="0" y="280" width="600" height="80" fill="#fca5a5" opacity=".28"/><text x="440" y="378" font-size="12" fill="#7f1d1d">Flood-prone zone</text>
+        <path d="M40 120H560M300 40V260M120 40V260M470 40V260" stroke="#fff" stroke-width="8"/>
+        <g id="pins"></g><g id="you"></g>
+      </svg>
+      <p class="hint">Schematic only, not to scale. Click the map to set where you live. Fictional places.</p></div>
+    <div><h2>Nearest evacuation centers</h2><ul class="rep" id="near"></ul>
+      <button class="btn" id="mychoice" type="button" style="margin-top:10px" hidden>Use nearest as my evacuation center</button></div>
+  </div>
+</section>
+
+<section id="v-plan" hidden>
+  <div class="two"><div class="box"><h2>Emergency contacts</h2>
+    <div id="cons"></div>
+    <label class="l" for="cn">Name</label><input type="text" id="cn" maxlength="40"><label class="l" for="cp">Phone</label><input type="tel" id="cp" maxlength="20">
+    <button class="btn fill" id="cadd" type="button" style="margin-top:10px">Add contact</button></div>
+  <div class="box"><h2>Family plan</h2>
+    <label class="l" for="meet">Meeting place if we are separated</label><input type="text" id="meet" maxlength="80" placeholder="e.g. Barangay hall covered court">
+    <label class="l" for="out">Out-of-area contact</label><input type="text" id="out" maxlength="80" placeholder="Relative in another province">
+    <label class="l" for="notes">Medical needs or pets</label><textarea id="notes" rows="3" maxlength="200"></textarea>
+    <p class="hint" style="margin-top:6px">Saved on this device only.</p></div></div>
+</section>
+
+<section id="v-rep" hidden>
+  <div class="two"><div class="box"><h2>Report what you see</h2>
+    <label class="l" for="rt">Type</label><select id="rt"><option>Flood</option><option>Blocked</option><option>Help</option><option>Safe</option></select>
+    <label class="l" for="rp">Place</label><input type="text" id="rp" maxlength="60" placeholder="e.g. Purok 3 near the bridge">
+    <label class="l" for="rn">Details</label><textarea id="rn" rows="3" maxlength="160"></textarea>
+    <button class="btn fill" id="radd" type="button" style="margin-top:10px">Post report</button>
+    <p class="hint" style="margin-top:6px">Prototype: reports are stored on this device. A real version would send them to the barangay DRRMO.</p></div>
+  <div><h2>Recent reports</h2><ul class="rep" id="reps"></ul></div></div>
+</section>
+</div></main>
+
+<dialog id="dlg"><h3>Emergency numbers</h3><p>If someone is in danger, call right away.</p><a href="tel:911">911: National Emergency Hotline</a><p class="hint">Also know your barangay hall and local DRRMO numbers, and save them in the Family plan tab.</p><form method="dialog"><button class="btn fill" style="margin-top:10px">Close</button></form></dialog>
+
+<script>
+var $=function(i){return document.getElementById(i)},KEY='sagipalert-v1';
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var S;try{S=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+S=S||{bag:{},cons:[],plan:{meet:'',out:'',notes:''},reps:[{t:'Flood',p:'Riverside Purok 4',n:'Water knee-deep on the road (sample report).',at:Date.now()-3600e3},{t:'Safe',p:'Pag-asa Elementary School',n:'Evacuation center open, 40 families inside (sample report).',at:Date.now()-1800e3}],pos:null,evac:null};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+/* tabs */
+function go(v){document.querySelectorAll('#tabs button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.v===v)});['now','guide','bag','map','plan','rep'].forEach(function(x){$('v-'+x).hidden=x!==v});if(v==='map')renderMap()}
+$('tabs').onclick=function(e){if(e.target.dataset.v)go(e.target.dataset.v)};
+document.addEventListener('click',function(e){if(e.target.dataset.go)go(e.target.dataset.go)});
+function net(){var o=navigator.onLine;$('net').textContent=o?'Online':'Offline: still works';$('net').className='net'+(o?'':' off')}
+addEventListener('online',net);addEventListener('offline',net);net();
+$('sos').onclick=function(){$('dlg').showModal()};
+/* guide */
+var G={typhoon:[['Before',['Charge phones and power banks','Secure roof, doors and windows; clear drains','Store 3 days of water and food','Know your evacuation center and route','Follow PAGASA and your barangay announcements']],['During',['Stay indoors away from windows','Turn off the main power if water enters','Do not cross floodwater or fallen lines','Move early if officials order evacuation']],['After',['Wait for the all-clear before going out','Avoid damaged wires and flooded areas','Boil water until it is declared safe','Check on neighbors, especially seniors']]],
+flood:[['Before',['Know if your home is in a flood-prone zone','Keep documents in a waterproof bag','Move valuables and appliances up high','Prepare to evacuate before the water rises']],['During',['Go to higher ground; do not wait','Never walk, swim or drive through floodwater','Unplug appliances only if it is safe and dry','Call 911 if trapped; go up, not into an attic with no exit']],['After',['Return only when officials say it is safe','Wear boots and gloves; floodwater carries germs and sharp objects','Throw away food touched by floodwater','Watch for leptospirosis symptoms and see a doctor']]],
+quake:[['Before',['Secure shelves and heavy furniture to the wall','Know a safe spot under a sturdy table','Plan two exits and a meeting place','Join your school or barangay earthquake drill']],['During',['Drop, cover and hold on','Stay away from glass, shelves and outside walls','If outdoors, move to an open area','Do not use the elevator']],['After',['Expect aftershocks; drop, cover and hold again','Check yourself and others for injuries','Leave damaged buildings; avoid fallen lines','If near the coast and the shaking is strong or long, move to high ground']]]};
+function renderGuide(h){$('guide').innerHTML=G[h].map(function(s){return '<div class="box"><h2>'+s[0]+'</h2><ul class="steps">'+s[1].map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul></div>'}).join('')}
+$('hz').onclick=function(e){var h=e.target.dataset.h;if(!h)return;document.querySelectorAll('#hz button').forEach(function(b){b.setAttribute('aria-pressed',b===e.target)});renderGuide(h)};renderGuide('typhoon');
+/* bag */
+var BAG=['Drinking water (1 liter per person per day, 3 days)','Ready-to-eat food and a can opener','Flashlight and extra batteries','Power bank and charging cable','First-aid kit and personal medicine','Whistle','Copies of IDs and documents in a plastic bag','Cash in small bills','Clothes, towel and rain gear','Face mask, alcohol and soap','Radio (battery or hand-crank)','Baby or pet supplies if needed'];
+function renderBag(){var n=BAG.filter(function(x,i){return S.bag[i]}).length,p=Math.round(n/BAG.length*100);
+  $('bag').innerHTML=BAG.map(function(x,i){return '<li><label><input type="checkbox" data-i="'+i+'"'+(S.bag[i]?' checked':'')+'><span>'+esc(x)+'</span></label></li>'}).join('');
+  $('bagbar').style.width=p+'%';$('bagc').textContent=n+' of '+BAG.length+' packed';$('rBag').textContent=p+'%';$('rBagBar').style.width=p+'%'}
+$('bag').onchange=function(e){var i=e.target.dataset.i;if(i==null)return;S.bag[i]=e.target.checked;save();renderBag()};
+/* map */
+var CENTERS=[['Pag-asa Elementary School',150,100],['Barangay Hall Covered Court',300,150],['Health Center Gym',470,95],['Parish Hall',520,200]];
+function dist(a,b){return Math.round(Math.hypot(a[0]-b[0],a[1]-b[1])*2.5)}
+function renderMap(){
+  var pins='';CENTERS.forEach(function(c,i){pins+='<g><rect x="'+(c[1]-11)+'" y="'+(c[2]-11)+'" width="22" height="22" rx="5" fill="#16a34a"/><text x="'+c[1]+'" y="'+(c[2]+5)+'" text-anchor="middle" font-size="14" fill="#fff" font-weight="800">E</text><text x="'+c[1]+'" y="'+(c[2]+26)+'" text-anchor="middle" font-size="10" fill="#14532d">'+esc(c[0])+'</text></g>'});
+  $('pins').innerHTML=pins;
+  $('you').innerHTML=S.pos?'<circle cx="'+S.pos[0]+'" cy="'+S.pos[1]+'" r="9" fill="#dc2626" stroke="#fff" stroke-width="3"/><text x="'+S.pos[0]+'" y="'+(S.pos[1]-14)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#7f1d1d">You</text>':'';
+  var list=S.pos?CENTERS.map(function(c){return{c:c,d:dist(S.pos,[c[1],c[2]])}}).sort(function(a,b){return a.d-b.d}):[];
+  $('near').innerHTML=S.pos?list.map(function(x,i){return '<li><span>'+(i===0?'⭐':'📍')+'</span><div><b>'+esc(x.c[0])+'</b><br><small class="hint">about '+x.d+' m away</small></div><span></span></li>'}).join(''):'<li class="hint" style="display:block">Click the map to place yourself.</li>';
+  $('mychoice').hidden=!S.pos;$('mychoice').dataset.n=list[0]?list[0].c[0]:'';
+  $('rEvac').textContent=S.evac||'Not yet';
+}
+$('svg').onclick=function(e){var r=$('svg').getBoundingClientRect();S.pos=[Math.round((e.clientX-r.left)/r.width*600),Math.round((e.clientY-r.top)/r.height*420)];save();renderMap()};
+$('mychoice').onclick=function(){S.evac=this.dataset.n;save();renderMap();this.textContent='Saved: '+S.evac;setTimeout(function(){$('mychoice').textContent='Use nearest as my evacuation center'},1800)};
+/* plan */
+function renderCons(){$('cons').innerHTML=S.cons.length?'<ul class="rep">'+S.cons.map(function(c,i){return '<li><span>📞</span><div><b>'+esc(c.n)+'</b><br><a href="tel:'+esc(c.p.replace(/[^\d+]/g,''))+'">'+esc(c.p)+'</a></div><button type="button" data-i="'+i+'" aria-label="Remove '+esc(c.n)+'">×</button></li>'}).join('')+'</ul>':'<p class="hint">No contacts yet.</p>';$('rCon').textContent=S.cons.length}
+$('cadd').onclick=function(){var n=$('cn').value.trim(),p=$('cp').value.trim();if(!n||!p)return;S.cons.push({n:n,p:p});$('cn').value=$('cp').value='';save();renderCons()};
+$('cons').onclick=function(e){var i=e.target.dataset.i;if(i==null)return;S.cons.splice(+i,1);save();renderCons()};
+['meet','out','notes'].forEach(function(k){$(k).value=S.plan[k]||'';$(k).oninput=function(){S.plan[k]=this.value;save()}});
+/* reports */
+function ago(t){var m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':Math.round(m/60)+' h ago'}
+function renderReps(){$('reps').innerHTML=S.reps.map(function(r,i){return '<li><span class="tag '+r.t+'">'+r.t+'</span><div><b>'+esc(r.p)+'</b> <small class="hint">'+ago(r.at)+'</small><br>'+esc(r.n)+'</div><button type="button" data-i="'+i+'" aria-label="Delete report">×</button></li>'}).join('')||'<li class="hint" style="display:block">No reports yet.</li>'}
+$('radd').onclick=function(){var p=$('rp').value.trim();if(!p)return;S.reps.unshift({t:$('rt').value,p:p,n:$('rn').value.trim(),at:Date.now()});$('rp').value=$('rn').value='';save();renderReps()};
+$('reps').onclick=function(e){var i=e.target.dataset.i;if(i==null)return;S.reps.splice(+i,1);save();renderReps()};
+renderBag();renderCons();renderReps();renderMap();
+</script>
+</body>
+</html>

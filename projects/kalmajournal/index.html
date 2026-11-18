@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalma — a private mood journal for students</title>
+<meta name="description" content="Check in with how you feel, write a few lines, and see your mood over time. Private by default, with gentle prompts to reach out when a rough patch lasts.">
+<style>
+:root{--bg:#f1f7f4;--ink:#183028;--muted:#5d7a6f;--line:#d7e8df;--brand:#2f9e75;--dark:#173c31;--card:#fff;--soft:#e4f4ec}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #7c3aed;outline-offset:2px;border-radius:8px}
+header{background:var(--dark);color:#fff;padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:1.15rem;margin-right:auto;display:flex;gap:10px;align-items:center}
+header h1 i{font-style:normal;background:#8ce0bd;color:var(--dark);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}.tabs button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:9px;padding:7px 13px;font-weight:700;cursor:pointer}
+.tabs button[aria-pressed=true]{background:#fff;color:var(--dark)}
+main{max-width:980px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.card h2{font-size:1.05rem;margin-bottom:10px}
+.moods{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0 14px}
+.moods button{border:2px solid var(--line);background:#fff;border-radius:14px;padding:10px 4px;cursor:pointer;font-size:1.9rem;line-height:1.1}
+.moods button small{display:block;font-size:.76rem;color:var(--muted);font-weight:600;margin-top:3px}
+.moods button[aria-pressed=true]{border-color:var(--brand);background:var(--soft)}
+textarea,input[type=text],select{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+textarea{min-height:110px;resize:vertical}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.tags button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:3px 12px;cursor:pointer;font-size:.86rem}
+.tags button[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn{border:1.5px solid var(--brand);color:#1d7a58;background:#fff;border-radius:11px;padding:9px 16px;font-weight:700;cursor:pointer}
+.btn.fill{background:var(--brand);color:#fff;border-color:var(--brand)}.btn.fill:hover{background:#25825f}
+.reflect{background:var(--soft);border-radius:12px;padding:12px 14px;margin-top:12px}
+.support{background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:14px 16px;margin-bottom:16px}
+.support.urgent{background:#fef2f2;border-color:#fca5a5}
+.support h3{font-size:1rem;margin-bottom:6px}.support a{font-weight:800;color:#9a3412}
+.support ul{padding-left:1.1em;margin:6px 0}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}.kp div{background:var(--soft);border-radius:12px;padding:10px 12px}.kp b{display:block;font-size:1.5rem}
+canvas{width:100%;height:220px;display:block}
+.ent{list-style:none;display:grid;gap:8px}
+.ent li{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:12px}
+.ent .em{font-size:1.6rem}.ent small{color:var(--muted)}.ent button{border:0;background:#fee2e2;color:#991b1b;border-radius:8px;width:26px;height:26px;cursor:pointer;align-self:start}
+.hint{color:var(--muted);font-size:.86rem}
+.cv table{width:100%;border-collapse:collapse;font-size:.9rem}.cv th,.cv td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+.bar{height:10px;border-radius:10px;background:#e4efe9;overflow:hidden;min-width:90px}.bar u{display:block;height:100%;text-decoration:none;background:var(--brand)}
+.sent{padding:3px 9px;border-radius:999px;font-weight:800;font-size:.8rem}.sent.pos{background:#d3f9d8;color:#1b5e20}.sent.neu{background:#e9ecef;color:#495057}.sent.neg{background:#ffe8cc;color:#7a3a00}
+.priv{list-style:none;display:grid;gap:8px}.priv li{display:flex;gap:10px}.priv i{font-style:normal;color:var(--brand);font-weight:900}
+[hidden]{display:none!important}
+@media(max-width:520px){.moods button{font-size:1.5rem}.kp{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1><i>K</i> Kalma</h1>
+  <div class="tabs" id="tabs" role="group" aria-label="Sections"><button type="button" data-v="in" aria-pressed="true">Check in</button><button type="button" data-v="trend" aria-pressed="false">My mood</button><button type="button" data-v="talk" aria-pressed="false">Talk to someone</button><button type="button" data-v="cv" aria-pressed="false">Counselor view</button><button type="button" data-v="priv" aria-pressed="false">Privacy</button></div>
+</header>
+<main>
+<div id="support" aria-live="polite"></div>
+
+<section id="v-in">
+  <div class="card"><h2>How are you today?</h2>
+    <div class="moods" id="moods" role="group" aria-label="Mood"></div>
+    <div class="tags" id="tags" role="group" aria-label="What is on your mind"></div>
+    <label for="txt" class="hint">Write a few lines if you want to. This stays on your device.</label>
+    <textarea id="txt" placeholder="What happened today? What is on your mind?"></textarea>
+    <p style="margin-top:10px"><button class="btn fill" id="save" type="button">Save check-in</button></p>
+    <div class="reflect" id="reflect" hidden aria-live="polite"></div>
+  </div>
+  <div class="card"><h2>Recent entries</h2><ul class="ent" id="ents"></ul></div>
+</section>
+
+<section id="v-trend" hidden>
+  <div class="card"><h2>Your last 14 days</h2>
+    <div class="kp" id="kp"></div>
+    <canvas id="ch" role="img" aria-label="Mood over the last 14 days"></canvas>
+    <p class="hint">Mood is what you chose (1 to 5). The line is a simple 3-day average.</p></div>
+</section>
+
+<section id="v-talk" hidden>
+  <div class="card"><h2>Talk to someone</h2>
+    <p>You do not have to wait for a crisis. If something is weighing on you, you can leave a message for the guidance office. You can stay anonymous.</p>
+    <label for="tn" class="hint" style="display:block;margin-top:10px">Name (optional)</label><input type="text" id="tn" maxlength="40" placeholder="Leave blank to stay anonymous">
+    <label for="tm" class="hint" style="display:block;margin-top:10px">Your message</label><textarea id="tm" maxlength="500"></textarea>
+    <p style="margin-top:10px"><button class="btn fill" id="send" type="button">Send message</button></p>
+    <p class="hint" id="sent" style="margin-top:8px" role="status"></p>
+    <p class="hint" style="margin-top:10px"><b>Prototype note:</b> in this demo the message is saved only on this device. A real version would deliver it to a trained counselor with your school's consent process.</p></div>
+  <div class="card"><h2>Need to talk right now?</h2>
+    <ul style="padding-left:1.1em"><li><b>NCMH Crisis Hotline</b> (24/7, free): <a href="tel:1553">1553</a> from a landline, or 0917-899-8727</li><li><b>Emergency:</b> <a href="tel:911">911</a></li><li>Or tell a trusted adult, teacher or your school's guidance counselor.</li></ul></div>
+</section>
+
+<section id="v-cv" hidden class="cv">
+  <div class="card"><h2>Counselor view (sample cohort)</h2>
+    <p class="hint">What a guidance office could see: anonymous, grouped numbers, never individual diary text. This view uses fictional data for 120 students.</p>
+    <div class="kp" style="margin-top:12px"><div><b>3.6</b>Average mood this week</div><div><b>14</b>Students with a rough week</div><div><b>9</b>Messages waiting</div></div>
+    <table><thead><tr><th>Group</th><th>Check-ins</th><th>Avg mood</th><th>Rough week</th></tr></thead><tbody id="cvt"></tbody></table>
+    <p class="hint" style="margin-top:10px">Rough week = three or more low days in a row. Groups smaller than 10 are hidden so no one can be identified. These numbers help plan outreach, such as a workshop before exams. They are not a diagnosis.</p></div>
+</section>
+
+<section id="v-priv" hidden>
+  <div class="card"><h2>Your privacy</h2>
+    <ul class="priv"><li><i>✓</i>Your entries are saved only in this browser. Nothing is uploaded.</li><li><i>✓</i>The mood analysis runs on your device with a simple word list. No text is sent to a server.</li><li><i>✓</i>Prompts to reach out are suggestions, not labels. Kalma does not diagnose.</li><li><i>✓</i>You can export or delete everything at any time.</li><li><i>✓</i>A school version would need written consent, a data-protection review under the Data Privacy Act, and a clear rule for who can see what.</li></ul>
+    <p style="margin-top:12px"><button class="btn" id="exp" type="button">Export my entries</button> <button class="btn" id="wipe" type="button">Delete everything</button> <button class="btn" id="demo" type="button">Load 14 days of sample data</button></p></div>
+</section>
+</main>
+<script>
+var $=function(i){return document.getElementById(i)},KEY='kalma-v1';
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var MOODS=[[1,'😞','Very low'],[2,'😕','Low'],[3,'😐','Okay'],[4,'🙂','Good'],[5,'😄','Great']],TAGS=['School','Family','Friends','Money','Health','Sleep','Love','Work'];
+var POS='good great happy glad proud calm relaxed excited grateful thankful love fun enjoy better hopeful smile laugh peaceful okay passed nice masaya saya ok mabuti tuwa kampante pasado nakangiti salamat'.split(' ');
+var NEG='sad tired exhausted stressed anxious worried scared afraid angry alone lonely hopeless useless failed fail overwhelmed cry crying hurt pain worst hate behind burnout stuck pressure malungkot pagod stress kinakabahan natatakot galit mag-isa nag-iisa bagsak walang-silbi nahihirapan umiyak iyak sawa hirap'.split(' ');
+var CRISIS=/(kill myself|end my life|end it all|want to die|wanna die|suicid|hurt myself|harm myself|no reason to live|better off without me|magpakamatay|ayoko na mabuhay|gusto ko nang mamatay|wala nang saysay ang buhay)/i;
+function sentiment(t){var w=t.toLowerCase().replace(/[^a-z\s-]/g,' ').split(/\s+/),p=0,n=0;w.forEach(function(x){if(POS.indexOf(x)>-1)p++;if(NEG.indexOf(x)>-1)n++;});var s=p+n?(p-n)/(p+n):0;return{s:s,p:p,n:n}}
+var E;try{E=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}E=E||{entries:[],msgs:[]};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(E))}catch(e){}}
+function dkey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+var mood=0,tags={};
+$('moods').innerHTML=MOODS.map(function(m){return '<button type="button" data-m="'+m[0]+'" aria-pressed="false" aria-label="'+m[2]+'">'+m[1]+'<small>'+m[2]+'</small></button>'}).join('');
+$('tags').innerHTML=TAGS.map(function(t){return '<button type="button" aria-pressed="false">'+t+'</button>'}).join('');
+$('moods').onclick=function(e){var b=e.target.closest('button');if(!b)return;mood=+b.dataset.m;document.querySelectorAll('#moods button').forEach(function(x){x.setAttribute('aria-pressed',x===b)})};
+$('tags').onclick=function(e){var b=e.target.closest('button');if(!b)return;var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',on);tags[b.textContent]=on};
+var REFL={pos:['That sounds like a bright spot. What helped, and could you do more of it?','Nice. Noticing good moments makes them easier to find again.'],neu:['Thanks for checking in. Even an ordinary day counts.','Steady days matter too. Anything small you are looking forward to?'],neg:['That sounds heavy. Thank you for putting it into words.','You are carrying a lot. One small thing today, like water, a walk or a message to a friend, can help a little.']};
+function reflect(m,s){var k=(m>=4||s>.3)&&m>=3?'pos':(m<=2||s<-.3)?'neg':'neu',a=REFL[k];return a[Math.floor(Math.random()*a.length)]}
+$('save').onclick=function(){
+  if(!mood){$('reflect').hidden=false;$('reflect').textContent='Choose how you feel first, then save.';return}
+  var t=$('txt').value.trim(),sn=sentiment(t),k=dkey(),cr=CRISIS.test(t);
+  E.entries=E.entries.filter(function(x){return x.d!==k});
+  E.entries.push({d:k,m:mood,tags:Object.keys(tags).filter(function(x){return tags[x]}),t:t,s:sn.s});save();
+  $('reflect').hidden=false;$('reflect').textContent=reflect(mood,sn.s);
+  $('txt').value='';mood=0;tags={};document.querySelectorAll('#moods button,#tags button').forEach(function(b){b.setAttribute('aria-pressed','false')});
+  renderAll(cr);
+};
+function lastDays(n){var out=[];for(var i=n-1;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var k=dkey(d),e=E.entries.filter(function(x){return x.d===k})[0];out.push({k:k,e:e,l:d.getDate()})}return out}
+function roughStreak(){var days=lastDays(7).filter(function(x){return x.e}),c=0;for(var i=days.length-1;i>=0;i--){var e=days[i].e;if(e.m<=2||(e.s<-.4&&e.m<=3))c++;else break}return c}
+function renderSupport(crisis){
+  var box=$('support');
+  if(crisis){box.innerHTML='<div class="support urgent"><h3>It sounds like you may be in a lot of pain</h3><p>You do not have to go through this alone. Please reach out to someone now.</p><ul><li>Call the <b>NCMH Crisis Hotline</b>: <a href="tel:1553">1553</a> (landline) or <a href="tel:09178998727">0917-899-8727</a>, free, 24/7</li><li>If you are in danger, call <a href="tel:911">911</a></li><li>Tell someone near you: a family member, friend, teacher or guidance counselor</li></ul></div>';return}
+  var s=roughStreak();
+  box.innerHTML=s>=3?'<div class="support"><h3>It has been a rough few days</h3><p>You have logged '+s+' low days in a row. That is worth sharing with someone. Many students feel this way, and talking helps.</p><p><button class="btn fill" type="button" data-go="talk">Talk to someone</button></p></div>':'';
+}
+document.addEventListener('click',function(e){if(e.target.dataset.go)go(e.target.dataset.go)});
+function renderEnts(){
+  var l=E.entries.slice().sort(function(a,b){return b.d.localeCompare(a.d)}).slice(0,7);
+  $('ents').innerHTML=l.length?l.map(function(e){var m=MOODS[e.m-1],lab=e.s>.2?['pos','Positive tone']:e.s<-.2?['neg','Heavy tone']:['neu','Neutral tone'];return '<li><span class="em" aria-hidden="true">'+m[1]+'</span><div><b>'+new Date(e.d+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})+'</b> <span class="sent '+lab[0]+'">'+lab[1]+'</span>'+(e.tags.length?'<br><small>'+e.tags.map(esc).join(' · ')+'</small>':'')+(e.t?'<br>'+esc(e.t):'')+'</div><button type="button" data-d="'+e.d+'" aria-label="Delete entry">×</button></li>'}).join(''):'<li class="hint" style="display:block">No entries yet. Your first check-in takes a minute.</li>';
+}
+$('ents').onclick=function(e){var d=e.target.dataset.d;if(!d)return;E.entries=E.entries.filter(function(x){return x.d!==d});save();renderAll()};
+function renderTrend(){
+  var days=lastDays(14),vals=days.map(function(x){return x.e?x.e.m:null}),have=vals.filter(Boolean);
+  var avg=have.length?(have.reduce(function(a,b){return a+b},0)/have.length).toFixed(1):'–',streak=0;for(var i=days.length-1;i>=0&&days[i].e;i--)streak++;
+  var best=have.length?Math.max.apply(null,have):'–';
+  $('kp').innerHTML='<div><b>'+avg+'</b>Average mood</div><div><b>'+streak+(streak===1?' day':' days')+'</b>Check-in streak</div><div><b>'+have.length+' of 14</b>Days logged</div>';
+  var cv=$('ch'),r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=r.width*d;cv.height=r.height*d;var x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);
+  var w=r.width,h=r.height,L=30,B=24,T=10,sx=(w-L-10)/13,y=function(v){return T+(5-v)/4*(h-T-B)};
+  x.font='11px system-ui';x.fillStyle='#5d7a6f';x.strokeStyle='#d7e8df';
+  for(var v=1;v<=5;v++){x.beginPath();x.moveTo(L,y(v));x.lineTo(w-10,y(v));x.stroke();x.textAlign='right';x.fillText(v,L-8,y(v)+4)}
+  x.textAlign='center';days.forEach(function(q,i){if(i%2===0||i===13)x.fillText(q.l,L+i*sx,h-7)});
+  var sm=vals.map(function(v,i){var a=vals.slice(Math.max(0,i-2),i+1).filter(Boolean);return a.length?a.reduce(function(p,c){return p+c},0)/a.length:null});
+  x.strokeStyle='#2f9e75';x.lineWidth=2.5;x.beginPath();var st=false;sm.forEach(function(v,i){if(v==null)return;var px=L+i*sx;if(!st){x.moveTo(px,y(v));st=true}else x.lineTo(px,y(v))});x.stroke();
+  vals.forEach(function(v,i){if(!v)return;x.fillStyle=v<=2?'#e8590c':v>=4?'#2f9e75':'#868e96';x.beginPath();x.arc(L+i*sx,y(v),5,0,7);x.fill()});
+  if(!have.length){x.fillStyle='#5d7a6f';x.textAlign='center';x.fillText('Check in to see your trend.',w/2,h/2)}
+}
+$('send').onclick=function(){var m=$('tm').value.trim();if(!m){$('sent').textContent='Write a message first.';return}E.msgs.push({at:Date.now(),from:$('tn').value.trim()||'Anonymous',m:m});$('tm').value='';save();$('sent').textContent='Saved. In a real deployment this would reach your school counselor. If you need help right now, call 1553.'};
+var CV=[['BSIT 1st year',32,3.7,3],['BSIT 2nd year',28,3.5,4],['BSIT 3rd year',31,3.4,5],['BSIT 4th year',29,3.6,2]];
+$('cvt').innerHTML=CV.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td><div class="bar" title="'+r[2]+' of 5"><u style="width:'+r[2]/5*100+'%"></u></div> '+r[2]+'</td><td>'+r[3]+'</td></tr>'}).join('');
+$('exp').onclick=function(){try{var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(E,null,2)],{type:'application/json'}));a.download='kalma-entries.json';a.click()}catch(e){alert('Download blocked here. Open in its own tab.')}};
+$('wipe').onclick=function(){if(!confirm('Delete all entries and messages on this device?'))return;E={entries:[],msgs:[]};save();renderAll()};
+$('demo').onclick=function(){E.entries=[];var seed=[3,3,4,4,3,2,2,2,3,4,5,4,4,3],tx=['Okay day, finished my lab report and I feel a bit relieved.','Tired from the project. Pressure is building.','Happy! Group study went well and I am proud of my output.','Good day. Mabuti ang pakiramdam ko.','Normal day.','Stressed and worried about the exam, behind on everything.','Sad and tired. Hirap mag-focus.','Overwhelmed. Pagod na pagod.','A bit better after talking to a friend.','Nice day, passed my quiz.','Great day! Grateful for my classmates.','Fun and relaxed weekend.','Calm. Spent time with family.','Okay. Looking forward to the week.'];
+  seed.forEach(function(m,i){var d=new Date();d.setDate(d.getDate()-(13-i));E.entries.push({d:dkey(d),m:m,tags:i%3?['School']:['Family','Sleep'],t:tx[i],s:sentiment(tx[i]).s})});save();renderAll()};
+function go(v){document.querySelectorAll('#tabs button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.v===v)});['in','trend','talk','cv','priv'].forEach(function(x){$('v-'+x).hidden=x!==v});if(v==='trend')renderTrend()}
+$('tabs').onclick=function(e){if(e.target.dataset.v)go(e.target.dataset.v)};
+function renderAll(crisis){renderSupport(crisis);renderEnts();renderTrend()}
+addEventListener('resize',function(){if(!$('v-trend').hidden)renderTrend()});
+renderAll();
+</script>
+</body>
+</html>
