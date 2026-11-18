@@ -6,6 +6,8 @@
 <title>Ariana Joy Acibar — Junior web developer</title>
 <meta name="description" content="Portfolio of Ariana Joy Acibar, a 4th-year BSIT student at NEUST looking for a junior developer role.">
 <meta name="theme-color" content="#08060F">
+<meta property="og:type" content="website"><meta property="og:title" content="Ariana Joy Acibar — Junior web developer"><meta property="og:description" content="4th-year BSIT student at NEUST. Ten projects with live demos, two certifications, open to internship and junior developer roles."><meta property="og:url" content="https://arianajoyacibar-rgb.github.io/Ariana-Portfolio/"><meta property="og:image" content="https://arianajoyacibar-rgb.github.io/Ariana-Portfolio/assets/formal.jpg"><meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%236D28D9'/%3E%3Ctext x='32' y='41' font-family='Arial' font-weight='800' font-size='26' text-anchor='middle' fill='white'%3EAJ%3C/text%3E%3C/svg%3E">
 <script>try{var __s=JSON.parse(localStorage.getItem("aj-settings")||"{}"),__r=matchMedia("(prefers-reduced-motion:reduce)").matches,__d=document.documentElement;__d.dataset.motion=__s.motion||(__r?"off":"full");__d.dataset.size=__s.size||"m";__d.dataset.glow=__s.glow===false?"off":"on"}catch(e){document.documentElement.dataset.motion="full"}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -111,7 +113,7 @@ section.s{padding:clamp(70px,9vw,120px) 0}
 .frame .empty svg{width:64px;height:64px;color:var(--lilac)}
 .frame .empty b{color:#fff;font:800 1.2rem var(--display)}
 .frame .empty small{font-size:.8rem;opacity:.85}
-.frame.has .empty{display:none}
+.frame .mono{position:absolute;inset:0;display:grid;place-items:center;font:800 5rem var(--display);color:var(--pale);background:linear-gradient(135deg,var(--v3),var(--bg))}
 .corner{position:absolute;width:26px;height:26px;border:3px solid var(--gold)}
 .corner.a{left:-6px;top:-6px;border-right:0;border-bottom:0;border-radius:10px 0 0 0}.corner.b{right:-6px;bottom:-6px;border-left:0;border-top:0;border-radius:0 0 10px 0}
 .holder figcaption{text-align:center;margin-top:16px;font-weight:700}
@@ -314,6 +316,39 @@ dialog.demo[open]::backdrop{animation:fadein .3s}
 @keyframes dlg{from{opacity:0;transform:scale(.97) translateY(14px)}}
 @keyframes fadein{from{opacity:0}}
 .top nav a,.footlink,.socials a,.pcard .plinks a{transition:color .2s,background .2s,transform .2s,box-shadow .2s}
+
+/* contact */
+.ct{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:20px;align-items:start}
+@media(max-width:860px){.ct{grid-template-columns:1fr}}
+.ct-info,.ct-form{padding:clamp(22px,3.4vw,36px)}
+.ct-info .status{margin-bottom:20px}
+.ct-list{list-style:none;display:grid;gap:18px}
+.ct-list li{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.ct-list .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(var(--l),.14);border:1px solid var(--line);color:var(--lilac)}
+.ct-list .ic svg{width:19px;height:19px}
+.ct-list small{display:block;color:var(--muted);font-size:.8rem}
+.ct-list a{color:var(--pale);font-weight:700;text-decoration:none;word-break:break-all;background:linear-gradient(var(--lilac),var(--lilac)) 0 100%/0 2px no-repeat;transition:background-size .3s,color .2s}
+.ct-list a:hover{color:#fff;background-size:100% 2px}
+.ct-copy{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:9px;padding:6px 12px;font:600 .82rem var(--body);cursor:pointer;transition:background .2s,border-color .2s}
+.ct-copy:hover{background:rgba(var(--l),.18);border-color:var(--lilac)}
+.ct-form h3{font-size:1.4rem;margin-bottom:14px}
+.ct-topics{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.ct-topics button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 14px;font:600 .86rem var(--body);cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.ct-topics button:hover{color:#fff;border-color:var(--lilac)}
+.ct-topics button[aria-pressed=true]{background:rgba(var(--l),.22);color:#fff;border-color:var(--lilac)}
+.ct-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.ct-grid{grid-template-columns:1fr}}
+.ct-form label{display:block;font-size:.85rem;font-weight:600;color:var(--pale);margin:12px 0 5px}
+.ct-form label em{font-weight:400;color:var(--muted);font-style:normal}
+.ct-form input,.ct-form textarea{width:100%;font:inherit;color:var(--text);background:rgba(255,255,255,.04);border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;transition:border-color .2s,background .2s,box-shadow .2s}
+.ct-form textarea{resize:vertical;min-height:130px}
+.ct-form input:focus,.ct-form textarea:focus{outline:none;border-color:var(--lilac);background:rgba(var(--l),.08);box-shadow:0 0 0 4px rgba(var(--g),.25)}
+.ct-form .bad{border-color:#ff8da1}
+.err{display:block;color:#ff9fb0;font-size:.8rem;min-height:1.1em;margin-top:3px}
+.ct-act{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.ct-note{margin-top:14px;font-size:.86rem;color:var(--muted)}
+footer.foot nav{display:flex;gap:18px;flex-wrap:wrap}
+footer.foot a{color:var(--muted);text-decoration:none;transition:color .2s}footer.foot a:hover{color:#fff}
 </style>
 </head>
 <body>
@@ -375,17 +410,11 @@ dialog.demo[open]::backdrop{animation:fadein .3s}
       <div class="frame" id="frame">
         <span class="corner a"></span><span class="corner b"></span>
         <div class="inner">
-          <img id="formal" alt="Formal portrait of Ariana Joy Acibar" hidden>
-          <div class="empty" id="empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20c.8-4 3.8-6 7.500-6s6.700 2 7.500 6"/></svg>
-            <b>Your formal photo</b>
-            <button class="btn btn--fill btn--sm" type="button" id="pick">Choose photo</button>
-            <small>Preview only on this device. To show it to everyone, save the photo as <code>assets/formal.jpg</code>.</small>
-          </div>
+          <img id="formal" src="assets/formal.jpg?v=3" alt="Formal portrait of Ariana Joy Acibar" width="900" height="946" fetchpriority="high" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'mono',textContent:'AJ'}))">
+          
         </div>
       </div>
-      <input type="file" id="file" accept="image/*" hidden>
-      <span class="tag-float">BSIT · 4th year</span>
+            <span class="tag-float">BSIT · 4th year</span>
       <figcaption>Ariana Joy Acibar<span>NEUST · Junior web developer</span></figcaption>
     </figure>
   </div>
@@ -396,8 +425,8 @@ dialog.demo[open]::backdrop{animation:fadein .3s}
   <div class="wrap"><div class="about-grid">
     <div class="rv">
       <div class="sec-h" style="margin-bottom:22px"><h2>About me</h2></div>
-      <p>Our capstone, <strong>EmploySmart</strong>, is a job-placement platform that matches local jobseekers with employers. I worked on it with my capstone team. </p>
-      <p>Outside the capstone I built <strong>SkillMatch</strong>, <strong>Talk Booth</strong>, <strong>FocusFlow</strong> and six more small web apps: <strong>StudyMate</strong>, <strong>TapIn</strong>, <strong>ScamShield</strong>, <strong>SagipAlert</strong>, <strong>TindaTrack</strong> and <strong>Kalma</strong>. They run in the browser. They use plain HTML, CSS and JavaScript, plus the Canvas, Web Speech and MediaRecorder APIs.</p>
+      <p>I'm a 4th-year BS Information Technology student at NEUST. I like turning everyday problems into small web apps that work, and I'm in my internship year looking for a junior developer role.</p>
+      <p>Our capstone, <strong>EmploySmart</strong>, is a job-placement platform that matches local jobseekers with employers. I worked on it with my capstone team.</p>
       <dl class="glass facts">
         <div><dt>Course</dt><dd>BS Information Technology</dd></div>
         <div><dt>Year</dt><dd>4th year</dd></div>
@@ -427,7 +456,7 @@ dialog.demo[open]::backdrop{animation:fadein .3s}
     <p class="fnote" id="fnote" role="status"></p>
     <div class="pgrid" id="pgrid">
       <article class="glass pcard rv" data-tech="team">
-        <div class="pshot">Add assets/employsmart-1.png<img src="assets/employsmart-1.png" alt="EmploySmart landing page: Find work that moves your future forward" loading="lazy" onerror="this.remove()"></div>
+        <div class="pshot">EmploySmart<img src="assets/employsmart-1.png" alt="EmploySmart landing page: Find work that moves your future forward" loading="lazy" onerror="this.remove()"></div>
         <div class="pbody">
           <p class="kind">Capstone, with my team</p>
           <h3>EmploySmart</h3>
@@ -436,7 +465,7 @@ dialog.demo[open]::backdrop{animation:fadein .3s}
           <details><summary>Case study</summary><dl>
             <div><dt>The problem</dt><dd>Local jobseekers and employers had no single place to find a good fit.</dd></div>
             <div><dt>What it does</dt><dd>Five role-based portals, a résumé parser and a weighted match score.</dd></div>
-            <div><dt>My part</dt><dd>[Add the portal, module or feature you personally built, and the tools you used.]</dd></div>
+            <div><dt>Built with</dt><dd>React, Vite and Tailwind CSS on the front end. A PHP REST API with MySQL and JWT sign-in on the back end. Built by our capstone team.</dd></div>
             <div><dt>Note</dt><dd>Hosting for the live version has ended, so the screenshots come from a local build.</dd></div></dl></details>
           
         </div>
@@ -591,7 +620,7 @@ dialog.demo[open]::backdrop{animation:fadein .3s}
           <li class="static"><b>Responsive, accessible layouts</b><span>All projects</span></li>
           <li class="static"><b>Git and GitHub</b><span>All repositories</span></li>
           <li><button type="button" data-f="team"><b>Teamwork</b><span>EmploySmart</span></button></li>
-          <li class="static"><b>[Back-end and database tools]</b><span>[Confirm from EmploySmart]</span></li></ul></div>
+          <li class="static"><b>PHP, MySQL and REST APIs</b><span>EmploySmart (team capstone)</span></li></ul></div>
       </div>
       <div class="orbit" aria-hidden="true"><div class="core">AJ</div><div class="ring r1"><span class="chip" style="left:68.1%;top:3.4%">HTML</span><span class="chip" style="left:81.3%;top:89.0%">CSS</span><span class="chip" style="left:0.6%;top:57.6%">JavaScript</span></div><div class="ring r2"><span class="chip" style="left:96.1%;top:69.5%">Canvas</span><span class="chip" style="left:30.5%;top:96.1%">Web Speech</span><span class="chip" style="left:3.9%;top:30.5%">MediaRecorder</span><span class="chip" style="left:69.5%;top:3.9%">localStorage</span></div><div class="ring r3"><span class="chip" style="left:81.1%;top:89.2%">Git</span><span class="chip" style="left:0.5%;top:57.3%">GitHub</span><span class="chip" style="left:68.4%;top:3.5%">Responsive</span></div></div>
     </div>
@@ -640,13 +669,27 @@ dialog.demo[open]::backdrop{animation:fadein .3s}
 
 <section class="s" id="contact">
   <div class="wrap">
-    <div class="glass cbox rv">
-      <h2>Need a junior developer?</h2>
-      <p>I'm open to a junior developer role during my internship. Send me a message and I'll reply.</p>
-      <a class="mail" id="email" href="mailto:arianajoyacibar@gmail.com">arianajoyacibar@gmail.com</a>
-      <div class="row"><a class="btn btn--fill" href="mailto:arianajoyacibar@gmail.com">Write an email</a><a class="btn" href="https://github.com/arianajoyacibar-rgb" target="_blank" rel="noopener">GitHub</a></div>
+    <div class="sec-h rv"><h2>Let's work together</h2><p>I'm open to internship and junior developer roles. Send me a message and I'll get back to you.</p></div>
+    <div class="ct">
+      <div class="glass ct-info rv">
+        <p class="status"><i></i>Open to internship and junior developer roles</p>
+        <ul class="ct-list">
+          <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><small>Email</small><a id="email" href="mailto:arianajoyacibar@gmail.com">arianajoyacibar@gmail.com</a></div><button type="button" class="ct-copy" id="copy2" aria-label="Copy email address">Copy</button></li>
+          <li><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.200.7-3.900-1.400-3.900-1.400-.5-1.300-1.300-1.700-1.300-1.700-1-.7.1-.7.1-.7 1.200.1 1.800 1.200 1.800 1.200 1 1.800 2.800 1.300 3.400 1 .1-.8.4-1.300.8-1.600-2.600-.3-5.300-1.300-5.300-5.700 0-1.300.5-2.300 1.200-3.100-.1-.3-.5-1.500.1-3.100 0 0 1-.3 3.200 1.200a11 11 0 0 1 5.800 0c2.200-1.500 3.200-1.200 3.200-1.200.6 1.600.2 2.800.1 3.100.8.8 1.200 1.800 1.200 3.100 0 4.400-2.700 5.400-5.300 5.700.4.4.8 1.100.8 2.200v3.200c0 .3.2.7.8.6A11.500 11.500 0 0 0 12 .5z"/></svg></span><div><small>GitHub</small><a href="https://github.com/arianajoyacibar-rgb" target="_blank" rel="noopener">github.com/arianajoyacibar-rgb</a></div></li>
+          <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.100 7-11a7 7 0 0 0-14 0c0 4.900 7 11 7 11z"/><circle cx="12" cy="10" r="2.500"/></svg></span><div><small>Based in</small><span>Carranglan, Nueva Ecija, Philippines</span></div></li>
+          <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><small>Local time</small><span><span id="clock2">--:--</span> (Philippine Time)</span></div></li>
+        </ul>
+      </div>
+      <form class="glass ct-form rv" id="cform" novalidate>
+        <h3>Send a message</h3>
+        <div class="ct-topics" role="group" aria-label="What is this about?"><button type="button" aria-pressed="true">Internship opportunity</button><button type="button" aria-pressed="false">Junior developer role</button><button type="button" aria-pressed="false">Project collaboration</button><button type="button" aria-pressed="false">Just saying hi</button></div>
+        <div class="ct-grid"><div><label for="cName">Your name</label><input id="cName" autocomplete="name" required><span class="err" id="eName"></span></div><div><label for="cMail">Your email <em>(optional)</em></label><input id="cMail" type="email" autocomplete="email"><span class="err" id="eMail"></span></div></div>
+        <label for="cMsg">Message</label><textarea id="cMsg" rows="5" required></textarea><span class="err" id="eMsg"></span>
+        <div class="ct-act"><button class="btn btn--fill" type="submit">Open in my email app</button><button class="btn" type="button" id="cCopy">Copy message</button></div>
+        <p class="ct-note" id="cNote" role="status">This opens your email app with the message ready to send. Nothing is stored on this site.</p>
+      </form>
     </div>
-    <footer class="foot"><span>© <span id="yr"></span> Ariana Joy Acibar. Hand-coded in HTML, CSS and JavaScript.</span><a href="#top">Back to top</a></footer>
+    <footer class="foot"><span>© <span id="yr"></span> Ariana Joy Acibar. Hand-coded in HTML, CSS and JavaScript.</span><nav aria-label="Footer"><a href="#about">About</a><a href="#projects">Projects</a><a href="#certs">Certifications</a><a href="#contact">Contact</a></nav><a href="#top">Back to top</a></footer>
   </div>
 </section>
 </main>
@@ -722,25 +765,7 @@ if(matchMedia('(hover:hover)').matches){
   try{var s=localStorage.getItem('aj-theme');if(s)set(s)}catch(e){}
 })();
 
-// formal photo holder: uses assets/formal.* if present, else lets you preview a photo here
-(function(){
-  var img=document.getElementById('formal'),frame=document.getElementById('frame'),file=document.getElementById('file'),pick=document.getElementById('pick');
-  function show(src){img.onload=function(){img.hidden=false;frame.classList.add('has')};img.src=src}
-  var tries=['assets/formal.jpg?v=3','assets/formal.jpeg?v=3','assets/formal.png?v=3','assets/formal.webp?v=3'],k=0;
-  function next(){
-    if(k<tries.length){var t=new Image();t.onload=function(){show(t.src)};t.onerror=function(){k++;next()};t.src=tries[k]}
-    else{try{var d=localStorage.getItem('aj-formal');if(d)show(d)}catch(e){}}
-  }
-  next();
-  pick.onclick=function(){file.click()};
-  file.onchange=function(){
-    var f=file.files[0];if(!f)return;var fr=new FileReader();
-    fr.onload=function(){var im=new Image();im.onload=function(){
-      var s=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      var url=c.toDataURL('image/jpeg',.88);show(url);try{localStorage.setItem('aj-formal',url)}catch(e){}};im.src=fr.result};
-    fr.readAsDataURL(f);
-  };
-})();
+
 
 // project filter (chips + skill rows)
 (function(){
@@ -820,6 +845,31 @@ document.getElementById('copy').addEventListener('click',function(){
   var done=false;function count(){if(done)return;done=true;document.querySelectorAll('.stats b').forEach(function(b){var n=parseInt(b.textContent,10);if(!n||mode()==='off')return;var t0=null;b.textContent='0';(function f(t){if(!t0)t0=t;var p=Math.min(1,(t-t0)/1100);b.textContent=Math.round(n*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(performance.now())})}
   var st=document.querySelector('.stats');if(st)new IntersectionObserver(function(es,ob){if(es[0].isIntersecting){setTimeout(count,500);ob.disconnect()}},{threshold:.5}).observe(st);
   sync();
+})();
+
+// contact form
+(function(){
+  var f=document.getElementById('cform'),topic='Internship opportunity',note=document.getElementById('cNote'),to='arianajoyacibar@gmail.com';
+  var tt=document.getElementById('toast');
+  function toast(m){tt.textContent=m;tt.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(function(){tt.classList.remove('show')},2200)}
+  function clk(){var e=document.getElementById('clock2');if(e)try{e.textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Manila'})}catch(x){}}
+  clk();setInterval(clk,15000);
+  document.querySelector('.ct-topics').onclick=function(e){var b=e.target.closest('button');if(!b)return;topic=b.textContent;[].forEach.call(this.children,function(x){x.setAttribute('aria-pressed',x===b)})};
+  function copy(txt,msg){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast(msg)},function(){toast('Copy blocked. Select the text and copy it.')})}else toast('Copy blocked. Select the text and copy it.')}
+  document.getElementById('copy2').onclick=function(){copy(to,'Email copied')};
+  function check(){
+    var n=f.cName.value.trim(),m=f.cMsg.value.trim(),e=f.cMail.value.trim(),ok=true;
+    function set(id,inp,msg){document.getElementById(id).textContent=msg;inp.classList.toggle('bad',!!msg);if(msg)ok=false}
+    set('eName',f.cName,n?'':'Please add your name.');
+    set('eMail',f.cMail,e&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)?'This email does not look right.':'');
+    set('eMsg',f.cMsg,m.length<10?'Please write at least a short message.':'');
+    return ok?{subject:topic+' (from '+n+')',body:m+'\n\n'+n+(e?'\n'+e:'')}:null;
+  }
+  f.onsubmit=function(ev){ev.preventDefault();var d=check();if(!d){var b=f.querySelector('.bad');if(b)b.focus();return}
+    location.href='mailto:'+to+'?subject='+encodeURIComponent(d.subject)+'&body='+encodeURIComponent(d.body);
+    note.textContent='Opening your email app. If nothing opens, press "Copy message" and send it to '+to+'.'};
+  document.getElementById('cCopy').onclick=function(){var d=check();if(d)copy('To: '+to+'\nSubject: '+d.subject+'\n\n'+d.body,'Message copied')};
+  ['cName','cMail','cMsg'].forEach(function(i){f[i].addEventListener('input',function(){this.classList.remove('bad');document.getElementById('e'+i.slice(1)).textContent=''})});
 })();
 </script>
 </body>
